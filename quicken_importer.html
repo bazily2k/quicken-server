@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Quicken Securities Importer</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f3;--bg3:#eeecea;
+  --text:#1a1a18;--text2:#6b6b67;--text3:#9e9e9a;
+  --border:rgba(0,0,0,0.13);--border2:rgba(0,0,0,0.25);
+  --accent:#1a1a18;
+  --green-bg:#eaf3de;--green-text:#27500a;
+  --info-bg:#e6f1fb;--info-text:#0c447c;
+  --warn-bg:#faeeda;--warn-text:#633806;
+  --ok-bg:#eaf3de;--ok-text:#27500a;
+  --err-bg:#fcebeb;--err-text:#791f1f;
+  --r:8px;--rl:12px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1e1e1c;--bg2:#2a2a28;--bg3:#333331;
+  --text:#f0efeb;--text2:#a0a09c;--text3:#6b6b67;
+  --border:rgba(255,255,255,0.12);--border2:rgba(255,255,255,0.25);
+  --accent:#f0efeb;
+  --green-bg:#173404;--green-text:#c0dd97;
+  --info-bg:#042c53;--info-text:#b5d4f4;
+  --warn-bg:#412402;--warn-text:#fac775;
+  --ok-bg:#173404;--ok-text:#c0dd97;
+  --err-bg:#501313;--err-text:#f7c1c1;
+}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);font-size:14px;line-height:1.5;}
+header{background:var(--bg);border-bottom:0.5px solid var(--border);padding:.9rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+header h1{font-size:17px;font-weight:500;}
+header .sub{font-size:12px;color:var(--text2);}
+.hd-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.autosave{font-size:11px;color:var(--text3);}
+.wrap{max-width:1050px;margin:0 auto;padding:1.25rem;display:flex;flex-direction:column;gap:1.1rem;}
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.2rem;}
+.ctitle{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.9rem;display:flex;align-items:center;gap:8px;}
+.tab-row{display:flex;gap:4px;flex-wrap:wrap;}
+.tab{padding:5px 15px;font-size:13px;border:0.5px solid var(--border);border-radius:var(--r);cursor:pointer;background:none;color:var(--text2);font-family:inherit;}
+.tab:hover{background:var(--bg2);color:var(--text);}
+.tab.active{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;font-weight:500;background:var(--info-bg);color:var(--info-text);}
+.ok{background:var(--ok-bg);color:var(--ok-text);}
+.warn{background:var(--warn-bg);color:var(--warn-text);}
+.err{background:var(--err-bg);color:var(--err-text);}
+.hdr-row{display:flex;gap:6px;margin-bottom:4px;}
+.hdr{font-size:11px;color:var(--text3);font-weight:500;}
+.row{display:flex;gap:6px;align-items:center;margin-bottom:5px;}
+input,select{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:inherit;font-size:13px;padding:5px 8px;height:32px;outline:none;}
+input:focus,select:focus{border-color:var(--border2);}
+.w80{width:80px;flex:none;}
+.w110{width:110px;flex:none;}
+.w90{width:90px;flex:none;}
+.w84{width:84px;flex:none;}
+.w120{width:120px;flex:none;}
+.del{background:none;border:0.5px solid var(--border2);border-radius:var(--r);width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:16px;flex-shrink:0;font-family:inherit;}
+.del:hover{background:var(--err-bg);color:var(--err-text);border-color:var(--err-text);}
+.add-btn{background:none;border:0.5px dashed var(--border2);border-radius:var(--r);padding:5px 12px;font-size:13px;color:var(--text2);cursor:pointer;width:100%;margin-top:7px;font-family:inherit;}
+.add-btn:hover{background:var(--bg2);color:var(--text);}
+.arow{display:flex;gap:8px;margin-top:.9rem;}
+.btn{flex:1;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;border-radius:var(--r);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);font-family:inherit;}
+.btn:hover{background:var(--bg2);}
+.btn.p{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+.btn.p:hover{opacity:.85;}
+.btn.sm{flex:none;padding:5px 12px;font-size:13px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.pre{background:var(--bg2);border-radius:var(--r);padding:.9rem;font-family:'Courier New',monospace;font-size:13px;color:var(--text);white-space:pre;overflow-x:auto;line-height:1.7;min-height:56px;border:0.5px solid var(--border);}
+.fx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:9px;margin-bottom:.9rem;}
+.fx-card{background:var(--bg2);border-radius:var(--r);padding:.7rem .9rem;}
+.fx-lbl{font-size:12px;color:var(--text2);margin-bottom:1px;}
+.fx-val{font-size:15px;font-weight:500;}
+.fx-time{font-size:11px;color:var(--text3);margin-top:1px;}
+.note{font-size:12px;color:var(--text3);margin-top:.6rem;}
+.help p{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:.75rem;}
+.help strong{color:var(--text);font-weight:500;}
+.sek{width:90px;font-size:12px;flex:none;}
+.test-result{font-size:12px;padding:6px 10px;border-radius:var(--r);margin-top:8px;display:none;}
+.test-result.ok{background:var(--ok-bg);color:var(--ok-text);display:block;}
+.test-result.err{background:var(--err-bg);color:var(--err-text);display:block;}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Quicken Securities Importer</h1>
+    <div class="sub">Exporterar kurser till CSV-format för import i Quicken</div>
+  </div>
+  <div class="hd-right">
+    <span class="autosave" id="autosave-msg"></span>
+    <button class="btn sm" onclick="exportJSON()">Exportera inställningar</button>
+    <button class="btn sm" onclick="importJSON()">Importera inställningar</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tab-row">
+    <button class="tab active" onclick="showTab('securities')">Securities</button>
+    <button class="tab" onclick="showTab('translations')">Översättningar</button>
+    <button class="tab" onclick="showTab('rates')">Valutakurser</button>
+    <button class="tab" onclick="showTab('export')">Exportera</button>
+    <button class="tab" onclick="showTab('help')">Hjälp</button>
+  </div>
+
+  <!-- SECURITIES -->
+  <div id="tab-securities">
+    <div class="card">
+      <div class="ctitle">API-nyckel (Twelve Data)</div>
+      <div class="row" style="margin-bottom:0;">
+        <input type="text" id="api-key" placeholder="Din API-nyckel från twelvedata.com" style="flex:1;font-family:monospace;font-size:12px;" title="Sparas automatiskt"/>
+        <button class="btn sm" onclick="fetchAllPrices()" id="fetch-btn">Hämta alla kurser</button>
+        <button class="btn sm" onclick="importFromServer()" id="server-btn" title="Importera kurser från lokal server (prices.json)">Från server</button>
+        <button class="btn sm" onclick="saveToServer()" id="save-server-btn" title="Spara securities till servern och hämta kurser">Spara till server</button>
+        <button class="btn sm" onclick="runFetchNow()" id="run-fetch-btn" title="Kör kurshämtning på servern nu">Kör hämtning nu</button>
+        <button class="btn sm" onclick="loadSecuritiesFromServer()" id="load-sec-btn" title="Ladda securities-lista från servern">Ladda securities</button>
+        <span id="fetch-status" style="font-size:12px;color:var(--text2);min-width:80px;"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ctitle">Testa en symbol</div>
+      <div class="row" style="margin-bottom:0;">
+        <input type="text" id="test-sym" placeholder="t.ex. RHM.XETR eller 0P00000L33.ST" style="width:160px;flex:none;"/>
+        <select id="test-cur" style="width:84px;flex:none;">
+          <option>SEK</option><option>USD</option><option selected>EUR</option><option>GBP</option>
+          <option>DKK</option><option>NOK</option><option>CHF</option><option>JPY</option><option>CAD</option><option>AUD</option>
+        </select>
+        <button class="btn sm" onclick="testSymbol()" id="test-btn">Testa</button>
+        <span id="test-status" style="font-size:12px;color:var(--text2);"></span>
+      </div>
+      <div class="test-result" id="test-result"></div>
+    </div>
+
+    <div class="card">
+      <div class="ctitle">Mina securities <span class="badge" id="sec-count">0</span></div>
+      <div class="hdr-row" style="padding-right:36px;">
+        <span class="hdr w80">Min symbol</span>
+        <span class="hdr w110">Namn</span>
+        <span class="hdr w120">Ext. symbol (Twelve Data)</span>
+        <span class="hdr w84">Valuta</span>
+        <span class="hdr w90">Pris (orig.)</span>
+        <span class="hdr" style="flex:1;">Datum</span>
+        <span class="hdr sek">Pris i SEK</span>
+        <span class="hdr" style="width:54px;text-align:center;" title="Manuell kurs – hoppas över vid hämtning">Manuell</span>
+      </div>
+      <div id="sec-list"></div>
+      <button class="add-btn" onclick="addSecurity()">+ Lägg till security</button>
+    </div>
+  </div>
+
+  <!-- TRANSLATIONS -->
+  <div id="tab-translations" style="display:none;">
+    <div class="card">
+      <div class="ctitle">Översättningslista</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:.9rem;">Min symbol → den symbol som Quicken använder i CSV-exporten. Lämna tomt om de är identiska.</p>
+      <div class="hdr-row" style="padding-right:36px;">
+        <span class="hdr w110">Min symbol</span>
+        <span class="hdr" style="flex:1;">Quicken-symbol</span>
+      </div>
+      <div id="trans-list"></div>
+      <button class="add-btn" onclick="addTranslation()">+ Lägg till översättning</button>
+    </div>
+  </div>
+
+  <!-- RATES -->
+  <div id="tab-rates" style="display:none;">
+    <div class="card">
+      <div class="ctitle">Valutakurser mot SEK <span class="badge warn" id="rates-badge">ej hämtade</span></div>
+      <div class="fx-grid" id="fx-grid"></div>
+      <div class="arow" style="margin-top:0;">
+        <button class="btn p" onclick="fetchRates()">Hämta aktuella kurser</button>
+      </div>
+      <p class="note">Kurser hämtas från ExchangeRate-API (open.er-api.com). Kräver internetanslutning.</p>
+    </div>
+    <div class="card">
+      <div class="ctitle">Manuella kurser</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:.9rem;">SEK per 1 enhet — överskriver hämtade kurser om du anger samma valuta.</p>
+      <div id="manual-fx-list"></div>
+      <button class="add-btn" onclick="addManualRate()">+ Lägg till valuta</button>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div id="tab-export" style="display:none;">
+    <div class="card">
+      <div class="ctitle">Sätt datum för alla rader</div>
+      <div class="row">
+        <input type="date" id="bulk-date" style="flex:1;"/>
+        <button class="btn sm" onclick="applyBulkDate()">Sätt datum</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Quicken CSV-förhandsvisning</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:.9rem;">Format: <code style="font-family:monospace;font-size:12px;">symbol,pris_sek,mm/dd/yyyy</code> — ingen rubrikrad, tom sista rad.</p>
+      <div class="pre" id="csv-pre">Ingen data ännu.</div>
+      <div class="arow">
+        <button class="btn" onclick="refreshPreview()">Uppdatera förhandsvisning</button>
+        <button class="btn" onclick="downloadSecuritiesCSV()">Exportera lista (Excel)</button>
+        <button class="btn p" onclick="downloadCSV()">Ladda ner CSV-fil</button>
+        <button class="btn" onclick="downloadImportScript()" title="Ladda ner PowerShell-script för Quicken-import">Ladda ner importscript</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HELP -->
+  <div id="tab-help" style="display:none;">
+
+    <div class="card help">
+      <div class="ctitle">Daglig användning</div>
+      <p>1. Öppna appen i Edge: <code style="font-family:monospace;">http://192.168.1.138:8765/quicken_importer.html</code></p>
+      <p>2. Klicka <strong>"Från server"</strong> — dagens kurser laddas in automatiskt.</p>
+      <p>3. Gå till fliken <strong>Exportera</strong> → klicka <strong>"Ladda ner CSV-fil"</strong>.</p>
+      <p>4. Klicka <strong>"Ladda ner importscript"</strong> och kör det — det fixar Quicken.ini automatiskt.</p>
+      <p>5. Importera CSV-filen i Quicken och tryck Enter i PowerShell när du är klar.</p>
+      <p>Kurser hämtas automatiskt vardagar kl 18:30 av servern — du behöver inte göra något manuellt.</p>
+      <p>Securities-listan laddas automatiskt från servern när du öppnar appen om listan är tom.</p>
+    </div>
+
+    <div class="card help">
+      <div class="ctitle">Fliken Securities</div>
+      <p><strong>API-nyckel</strong> — Din nyckel från twelvedata.com. Sparas automatiskt och behöver bara anges en gång.</p>
+      <p><strong>Hämta alla kurser</strong> — Hämtar kurser direkt från Twelve Data och Yahoo Finance via webbläsaren. Aktuell kurs hämtas om börsen är öppen, annars används senaste stängningskurs automatiskt. Obs: fonder och vissa symboler fungerar inte härifrån pga CORS-begränsningar — använd "Från server" istället.</p>
+      <p><strong>Från server</strong> — Hämtar de senaste kurserna från serverns prices.json. Rekommenderat för daglig användning. Kurserna är alltid aktuella — antingen dagens handelskurs eller senaste stängningskurs om börsen är stängd.</p>
+      <p><strong>Spara till server</strong> — Skickar din securities-lista till servern, hämtar nya kurser och importerar dem automatiskt. Använd när du lagt till eller ändrat en security.</p>
+      <p><strong>Kör hämtning nu</strong> — Triggar kurshämtningen på servern direkt från webbläsaren utan att behöva logga in på servern. Hämtar aktuella kurser för alla securities och importerar dem automatiskt i appen. Praktiskt om du vill uppdatera kurserna utanför det schemalagda jobbet kl 18:30.</p>
+      <p><strong>Ladda securities</strong> — Hämtar securities-listan från serverns securities.json och fyller i appen. Befintliga priser och datum bevaras. Sker även automatiskt vid uppstart om listan är tom. Använd denna knapp om du ändrat securities.json direkt på servern och vill synka ner ändringarna till appen.</p>
+      <p><strong>Testa en symbol</strong> — Testa om en symbol fungerar och se vilket pris som returneras. Testet går via servern så både Twelve Data och Yahoo Finance fungerar utan CORS-begränsningar. Bra för att hitta rätt symbolformat innan du lägger in en ny security.</p>
+      <p><strong>Securities-listan</strong> — Varje rad är ett värdepapper med följande fält:</p>
+      <p style="padding-left:1rem;"><strong>Min symbol</strong> — Ditt eget namn på värdepappret, samma som i Quicken. Detta är symbolen som hamnar i CSV-filen.</p>
+      <p style="padding-left:1rem;"><strong>Namn</strong> — Valfri beskrivning, används bara för din egen översikt.</p>
+      <p style="padding-left:1rem;"><strong>Ext. symbol (Twelve Data)</strong> — Den symbol som används för kurshämtning, t.ex. RHM.DE eller 0P0001ECQR.ST. Kan skilja sig från din egen symbol.</p>
+      <p style="padding-left:1rem;"><strong>Valuta</strong> — Valutan som kursen anges i. Omräkning till SEK sker automatiskt.</p>
+      <p style="padding-left:1rem;"><strong>Pris (orig.)</strong> — Kursen i originalvalutan. Fylls i automatiskt vid kurshämtning.</p>
+      <p style="padding-left:1rem;"><strong>Datum</strong> — Kursdatum. Sätts automatiskt till dagens datum vid kurshämtning.</p>
+      <p style="padding-left:1rem;"><strong>Pris i SEK</strong> — Beräknas automatiskt från pris × valutakurs.</p>
+      <p style="padding-left:1rem;"><strong>Manuell</strong> — Kryssa i om du vill ange priset själv. Raden hoppas över vid automatisk kurshämtning men ingår i CSV-exporten.</p>
+    </div>
+
+    <div class="card help">
+      <div class="ctitle">Fliken Översättningar</div>
+      <p>Här anger du om din symbol i Quicken skiljer sig från den externa symbolen för kurshämtning. T.ex. om du kallar ett värdepapper "VOLVO-B" i Quicken men hämtar kursen som "VOLV B.ST".</p>
+      <p>Översättningarna tillämpas automatiskt om fältet "Ext. symbol" är tomt på en security-rad.</p>
+    </div>
+
+    <div class="card help">
+      <div class="ctitle">Fliken Valutakurser</div>
+      <p><strong>Hämta aktuella kurser</strong> — Hämtar valutakurser från ExchangeRate-API (open.er-api.com). Används för att räkna om utländska kurser till SEK.</p>
+      <p><strong>Manuella kurser</strong> — Ange egna kurser om du vill använda din banks kurs istället för ExchangeRate-API:ets kurs.</p>
+      <p>Valutakurser sparas automatiskt och laddas nästa gång du öppnar appen. Servern uppdaterar valutakurserna automatiskt varje gång kurser hämtas kl 18:30.</p>
+    </div>
+
+    <div class="card help">
+      <div class="ctitle">Fliken Exportera</div>
+      <p><strong>Sätt datum för alla rader</strong> — Sätter samma datum på alla securities på en gång. Praktiskt om du vill ändra datum efter en kurshämtning.</p>
+      <p><strong>Uppdatera förhandsvisning</strong> — Visar hur CSV-filen kommer se ut. Om en rad saknar pris eller datum visas en förklaring varför den inte kan exporteras.</p>
+      <p><strong>Exportera lista (Excel)</strong> — Skapar en CSV-fil med alla dina securities och deras kurser, formaterad för Excel med semikolon som avgränsare.</p>
+      <p><strong>Ladda ner CSV-fil</strong> — Skapar Quicken-importfilen i formatet symbol,pris,mm/dd/yyyy utan rubrikrad och med en tom sista rad, precis som Quicken kräver.</p>
+      <p><strong>Ladda ner importscript</strong> — Laddar ner ett PowerShell-script (importera_quicken.ps1) som automatiskt ändrar sDecimal till punkt i Quicken.ini, öppnar Downloads-mappen så du kan importera CSV-filen i Quicken, och ändrar sedan tillbaka till komma när du trycker Enter. Behöver bara förberedas en gång:</p>
+      <p style="padding-left:1rem;">1. Ladda ner scriptet och kör i PowerShell: <code style="font-family:monospace;">Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</code></p>
+      <p style="padding-left:1rem;">2. Avblockera filen: <code style="font-family:monospace;">Unblock-File -Path "C:\Users\[ditt namn]\Downloads\importera_quicken.ps1"</code></p>
+      <p style="padding-left:1rem;">3. Därefter räcker det att högerklicka på scriptet → <strong>Kör med PowerShell</strong> varje gång du vill importera.</p>
+      <p style="padding-left:1rem;">4. Importera CSV-filen i Quicken medan PowerShell-fönstret är öppet.</p>
+      <p style="padding-left:1rem;">5. Tryck <strong>Enter</strong> i PowerShell-fönstret när importen är klar — sDecimal ändras tillbaka till komma automatiskt.</p>
+    </div>
+
+    <div class="card help">
+      <div class="ctitle">Knapparna uppe till höger</div>
+      <p><strong>Exportera inställningar</strong> — Sparar alla dina securities, översättningar och inställningar till en JSON-fil på din dator. Bra som backup eller för att flytta inställningar till en annan dator.</p>
+      <p><strong>Importera inställningar</strong> — Laddar in en tidigare sparad JSON-fil och återställer alla inställningar.</p>
+      <p>Notera: Alla ändringar sparas också automatiskt i webbläsarens lokala minne (localStorage) och laddas automatiskt nästa gång du öppnar appen.</p>
+    </div>
+
+    <div class="card help">
+      <div class="ctitle">Symbolformat</div>
+      <p><strong>Stockholmsbörsen (aktier):</strong> <code style="font-family:monospace;">ERIC B.ST</code>, <code style="font-family:monospace;">VOLV B.ST</code>, <code style="font-family:monospace;">SEB A.ST</code></p>
+      <p><strong>Svenska fonder:</strong> Morningstar-ID + .ST — t.ex. <code style="font-family:monospace;">0P0001ECQR.ST</code> (Avanza Global), <code style="font-family:monospace;">0P0001BM0V.ST</code> (Avanza Auto 3). Hitta ID:t på finance.yahoo.com.</p>
+      <p><strong>Frankfurt/Xetra:</strong> <code style="font-family:monospace;">RHM.DE</code>, <code style="font-family:monospace;">SAP.DE</code>, <code style="font-family:monospace;">BMW.DE</code></p>
+      <p><strong>London:</strong> <code style="font-family:monospace;">VOD.L</code>, <code style="font-family:monospace;">SHEL.L</code>, <code style="font-family:monospace;">BP.L</code></p>
+      <p><strong>NYSE/NASDAQ:</strong> <code style="font-family:monospace;">AAPL</code>, <code style="font-family:monospace;">MSFT</code>, <code style="font-family:monospace;">TSLA</code></p>
+      <p><strong>Tips:</strong> Använd "Testa en symbol"-kortet för att verifiera att symbolen fungerar innan du lägger in den.</p>
+    </div>
+
+    <div class="card help">
+      <div class="ctitle">Serverinformation</div>
+      <p><strong>Servern</strong> körs automatiskt och behöver inte startas manuellt. Den startar om sig själv vid uppstart och om den kraschar.</p>
+      <p><strong>Kurshämtning</strong> sker automatiskt vardagar kl 18:30 via ett schemalagt jobb på servern. Aktuell kurs hämtas om börsen är öppen, annars används senaste stängningskurs automatiskt.</p>
+      <p><strong>Backup</strong> till NAS (/mnt/nas-backup/quicken_importer/) sker automatiskt efter varje kurshämtning. Datumstämplade kopior sparas i 30 dagar.</p>
+      <p><strong>Loggar</strong> finns i <code style="font-family:monospace;">/home/ola/quicken_server/fetch.log</code> på servern.</p>
+      <p><strong>Manuell kurshämtning:</strong> <code style="font-family:monospace;">cd ~/quicken_server && python3 fetch_prices.py</code></p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+var securities = [];
+var translations = {};
+var fxRates = { SEK: 1 };
+var ratesTime = null;
+var CURR = ['SEK','USD','EUR','GBP','DKK','NOK','CHF','JPY','CAD','AUD'];
+var saveTimer = null;
+
+function showTab(name) {
+  ['securities','translations','rates','export','help'].forEach(function(t) {
+    document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(function(b,i) {
+    b.classList.toggle('active', ['securities','translations','rates','export','help'][i]===name);
+  });
+  if (name==='export') refreshPreview();
+  if (name==='rates') renderFxGrid();
+}
+
+function getSEK(price, currency) {
+  var p = parseFloat(price);
+  if (!price || isNaN(p)) return null;
+  if (currency === 'SEK') return p;
+  var rate = fxRates[currency];
+  if (!rate) return null;
+  return p * rate;
+}
+
+function esc(v) { return (v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+
+// --- AUTO SAVE (debounced) ---
+function autoSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function() { doSave(); }, 400);
+}
+
+function doSave() {
+  var state = buildState();
+  try {
+    localStorage.setItem('qi_state', JSON.stringify(state));
+    var el = document.getElementById('autosave-msg');
+    if (el) {
+      var t = new Date();
+      var hh = t.getHours()<10?'0'+t.getHours():t.getHours();
+      var mm = t.getMinutes()<10?'0'+t.getMinutes():t.getMinutes();
+      var ss = t.getSeconds()<10?'0'+t.getSeconds():t.getSeconds();
+      el.textContent = 'Sparad '+hh+':'+mm+':'+ss;
+    }
+  } catch(e) {}
+}
+
+function buildState() {
+  var transRows = [];
+  document.querySelectorAll('#trans-list .row').forEach(function(row) {
+    var inp = row.querySelectorAll('input');
+    transRows.push({ my: inp[0].value, ext: inp[1].value });
+  });
+  var manualRows = [];
+  document.querySelectorAll('#manual-fx-list .row').forEach(function(row) {
+    var inp = row.querySelectorAll('input');
+    manualRows.push({ cur: inp[0].value, rate: inp[1].value });
+  });
+  var apiKey = document.getElementById('api-key') ? document.getElementById('api-key').value : '';
+  return { securities: securities, transRows: transRows, manualRows: manualRows, fxRates: fxRates, ratesTime: ratesTime, apiKey: apiKey };
+}
+
+function applyState(state) {
+  securities = state.securities || [];
+  fxRates = state.fxRates || { SEK: 1 };
+  ratesTime = state.ratesTime ? new Date(state.ratesTime) : null;
+  var apiEl = document.getElementById('api-key');
+  if (apiEl && state.apiKey) apiEl.value = state.apiKey;
+  document.getElementById('trans-list').innerHTML = '';
+  (state.transRows || []).forEach(function(r) { addTranslation(r.my, r.ext); });
+  rebuildTrans(false);
+  document.getElementById('manual-fx-list').innerHTML = '';
+  (state.manualRows || []).forEach(function(r) { addManualRate(r.cur, r.rate); });
+  rebuildManual(false);
+  renderSecurities();
+  renderFxGrid();
+  var badge = document.getElementById('rates-badge');
+  if (ratesTime) {
+    badge.textContent = 'uppdaterade ' + new Date(ratesTime).toLocaleDateString('sv-SE');
+    badge.className = 'badge ok';
+  }
+}
+
+// --- SECURITIES ---
+function addSecurity(sym, name, ext, currency, price, date, manual) {
+  sym=sym||''; name=name||''; ext=ext||''; currency=currency||'SEK'; price=price||''; date=date||''; manual=manual||false;
+  var id = Date.now() + Math.random();
+  securities.push({ id:id, sym:sym, name:name, ext:ext, currency:currency, price:price, date:date, manual:manual });
+  renderSecurities();
+  autoSave();
+}
+
+function removeSecurity(id) {
+  securities = securities.filter(function(s) { return s.id !== id; });
+  renderSecurities();
+  autoSave();
+}
+
+function updField(id, field, val) {
+  var s = securities.find(function(x) { return x.id === id; });
+  if (s) { s[field] = val; autoSave(); }
+}
+
+function updPrice(id, val) {
+  var s = securities.find(function(x) { return x.id === id; });
+  if (s) { s.price = val; updateSEKDisplay(id); autoSave(); }
+}
+
+function updCurrency(id, val) {
+  var s = securities.find(function(x) { return x.id === id; });
+  if (s) { s.currency = val; updateSEKDisplay(id); autoSave(); }
+}
+
+function updateSEKDisplay(id) {
+  var s = securities.find(function(x) { return x.id === id; });
+  if (!s) return;
+  var el = document.getElementById('sek-'+id);
+  if (!el) return;
+  var sek = getSEK(s.price, s.currency);
+  if (sek !== null) {
+    el.textContent = sek.toFixed(2)+' kr';
+    el.style.color = s.currency !== 'SEK' ? 'var(--green-text)' : 'var(--text2)';
+  } else if (s.currency !== 'SEK' && s.price) {
+    el.textContent = '– kurs saknas';
+    el.style.color = 'var(--err-text)';
+  } else {
+    el.textContent = '';
+    el.style.color = 'var(--text2)';
+  }
+}
+
+function renderSecurities() {
+  var list = document.getElementById('sec-list');
+  document.getElementById('sec-count').textContent = securities.length;
+  list.innerHTML = '';
+  securities.forEach(function(s) {
+    var sek = getSEK(s.price, s.currency);
+    var sekTxt = '';
+    var sekColor = 'var(--text2)';
+    if (sek !== null) {
+      sekTxt = sek.toFixed(2)+' kr';
+      if (s.currency !== 'SEK') sekColor = 'var(--green-text)';
+    } else if (s.currency !== 'SEK' && s.price) {
+      sekTxt = '– kurs saknas';
+      sekColor = 'var(--err-text)';
+    }
+    var opts = CURR.map(function(c) { return '<option'+(c===s.currency?' selected':'')+'>'+c+'</option>'; }).join('');
+    var row = document.createElement('div');
+    row.className = 'row';
+    row.dataset.id = s.id;
+    row.innerHTML =
+      '<input type="text" class="w80" placeholder="RNMBF" value="'+esc(s.sym)+'" oninput="updField('+s.id+',\'sym\',this.value)" title="Din egen symbol / Quickens symbol"/>'+
+      '<input type="text" class="w110" placeholder="Rheinmetall AG" value="'+esc(s.name)+'" oninput="updField('+s.id+',\'name\',this.value)" title="Namn (valfritt)"/>'+
+      '<input type="text" class="w120" placeholder="RHM.XETR" value="'+esc(s.ext)+'" oninput="updField('+s.id+',\'ext\',this.value)" title="Symbol i Twelve Data för kurshämtning"/>'+
+      '<select class="w84" onchange="updCurrency('+s.id+',this.value);">'+opts+'</select>'+
+      '<input type="number" class="w90" placeholder="0.00" value="'+esc(s.price)+'" step="0.0001" oninput="updPrice('+s.id+',this.value);" title="Pris i vald valuta"/>'+
+      '<input type="date" style="flex:1;min-width:130px;" value="'+esc(s.date)+'" oninput="updField('+s.id+',\'date\',this.value)"/>'+
+      '<span class="sek" id="sek-'+s.id+'" style="color:'+sekColor+';">'+sekTxt+'</span>'+
+      '<div style="width:54px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><input type="checkbox" '+(s.manual?'checked':'')+' onchange="updField('+s.id+',\'manual\',this.checked);" title="Manuell kurs – hoppas över vid automatisk hämtning" style="width:16px;height:16px;cursor:pointer;"/></div>'+
+      '<button class="del" onclick="removeSecurity('+s.id+')" title="Ta bort">×</button>';
+    list.appendChild(row);
+  });
+}
+
+// --- TRANSLATIONS ---
+function addTranslation(my, ext) {
+  my=my||''; ext=ext||'';
+  var list = document.getElementById('trans-list');
+  var row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML =
+    '<input type="text" class="w110" placeholder="MIN-SYM" value="'+esc(my)+'" oninput="rebuildTrans(true)" style="text-transform:uppercase;"/>'+
+    '<input type="text" style="flex:1;" placeholder="QUICKEN-SYM" value="'+esc(ext)+'" oninput="rebuildTrans(true)"/>'+
+    '<button class="del" onclick="this.closest(\'.row\').remove();rebuildTrans(true);" title="Ta bort">×</button>';
+  list.appendChild(row);
+}
+
+function rebuildTrans(save) {
+  translations = {};
+  document.querySelectorAll('#trans-list .row').forEach(function(row) {
+    var inp = row.querySelectorAll('input');
+    var my = inp[0].value.trim().toUpperCase();
+    var ext = inp[1].value.trim();
+    if (my) translations[my] = ext;
+  });
+  if (save) autoSave();
+}
+
+function getExtSym(sym) {
+  return translations[sym.toUpperCase()] || sym;
+}
+
+// --- RATES ---
+async function fetchRates() {
+  var badge = document.getElementById('rates-badge');
+  badge.textContent = 'hämtar...';
+  badge.className = 'badge warn';
+  try {
+    var resp = await fetch('https://open.er-api.com/v6/latest/SEK');
+    if (!resp.ok) throw new Error('HTTP '+resp.status);
+    var data = await resp.json();
+    if (data.result==='error') throw new Error(data['error-type']||'API-fel');
+    fxRates = { SEK: 1 };
+    Object.entries(data.rates).forEach(function(e) { fxRates[e[0]] = 1/e[1]; });
+    ratesTime = new Date();
+    badge.textContent = 'uppdaterade '+ratesTime.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+    badge.className = 'badge ok';
+    renderFxGrid();
+    renderSecurities();
+    autoSave();
+  } catch(e) {
+    badge.textContent = 'fel: '+e.message;
+    badge.className = 'badge err';
+  }
+}
+
+function renderFxGrid() {
+  var grid = document.getElementById('fx-grid');
+  var show = ['USD','EUR','GBP','DKK','NOK','CHF','JPY','CAD','AUD'];
+  grid.innerHTML = '';
+  show.forEach(function(cur) {
+    var rate = fxRates[cur];
+    var div = document.createElement('div');
+    div.className = 'fx-card';
+    div.innerHTML = '<div class="fx-lbl">1 '+cur+' =</div>'+
+      '<div class="fx-val">'+(rate ? rate.toFixed(4)+' kr' : '–')+'</div>'+
+      '<div class="fx-time">'+(rate && ratesTime ? new Date(ratesTime).toLocaleDateString('sv-SE') : 'ej hämtad')+'</div>';
+    grid.appendChild(div);
+  });
+}
+
+function addManualRate(cur, rate) {
+  cur=cur||''; rate=rate||'';
+  var list = document.getElementById('manual-fx-list');
+  var row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML =
+    '<input type="text" class="w80" placeholder="USD" value="'+esc(cur)+'" oninput="rebuildManual(true)" style="text-transform:uppercase;"/>'+
+    '<input type="number" style="flex:1;" placeholder="SEK per 1 enhet, t.ex. 10.45" value="'+esc(rate)+'" step="0.0001" oninput="rebuildManual(true)"/>'+
+    '<button class="del" onclick="this.closest(\'.row\').remove();rebuildManual(true);" title="Ta bort">×</button>';
+  list.appendChild(row);
+}
+
+function rebuildManual(save) {
+  document.querySelectorAll('#manual-fx-list .row').forEach(function(row) {
+    var inp = row.querySelectorAll('input');
+    var cur = inp[0].value.trim().toUpperCase();
+    var rate = parseFloat(inp[1].value);
+    if (cur && rate > 0) fxRates[cur] = rate;
+  });
+  renderSecurities();
+  renderFxGrid();
+  if (save) autoSave();
+}
+
+// --- PRICE FETCHING ---
+function getApiKey() {
+  return document.getElementById('api-key').value.trim();
+}
+
+async function fetchFromYahoo(sym) {
+  // Yahoo Finance v8 quote endpoint - no auth needed
+  var url = 'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=1d&range=1d';
+  try {
+    var resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!resp.ok) return null;
+    var data = await resp.json();
+    var result = data && data.chart && data.chart.result && data.chart.result[0];
+    if (!result) return null;
+    var meta = result.meta;
+    var price = meta.regularMarketPrice || meta.previousClose;
+    if (!price) return null;
+    return price;
+  } catch(e) {
+    return null;
+  }
+}
+
+async function fetchAllPrices() {
+  var apiKey = getApiKey();
+  if (!apiKey) { alert('Ange din Twelve Data API-nyckel först.'); return; }
+  if (securities.length === 0) { alert('Inga securities att hämta kurser för.'); return; }
+  var btn = document.getElementById('fetch-btn');
+  var status = document.getElementById('fetch-status');
+  btn.disabled = true;
+  status.textContent = 'Hämtar från Twelve Data...';
+  var today = new Date().toISOString().slice(0,10);
+  var ok = 0; var yahooOk = 0; var fail = 0; var msgs = [];
+
+  var symMap = {};
+  var validSyms = [];
+  securities.forEach(function(s) {
+    if (s.manual) return;
+    var sym = (s.ext && s.ext.trim()) ? s.ext.trim() : getExtSym(s.sym.trim());
+    if (!sym) { fail++; msgs.push((s.name||s.sym||'?')+': symbol saknas'); return; }
+    symMap[sym] = s;
+    validSyms.push(sym);
+  });
+
+  var manualCount = securities.filter(function(s){ return s.manual; }).length;
+  if (validSyms.length === 0) {
+    btn.disabled = false;
+    status.textContent = manualCount > 0 ? 'Alla är manuella.' : 'Inga giltiga symboler.';
+    if (msgs.length) alert('Problem:\n'+msgs.join('\n'));
+    return;
+  }
+
+  // --- Step 1: Twelve Data batch ---
+  var failedSyms = [];
+  try {
+    var url = 'https://api.twelvedata.com/price?symbol='+encodeURIComponent(validSyms.join(','))+'&apikey='+encodeURIComponent(apiKey);
+    var resp = await fetch(url);
+    var data = await resp.json();
+
+    if (validSyms.length === 1) {
+      var sym = validSyms[0];
+      if (data.status === 'error' || !data.price) {
+        failedSyms.push(sym);
+      } else {
+        symMap[sym].price = parseFloat(data.price).toFixed(4);
+        symMap[sym].date = today;
+        ok++;
+      }
+    } else {
+      validSyms.forEach(function(sym) {
+        var entry = data[sym];
+        if (!entry || entry.status === 'error' || !entry.price) {
+          failedSyms.push(sym);
+        } else {
+          symMap[sym].price = parseFloat(entry.price).toFixed(4);
+          symMap[sym].date = today;
+          ok++;
+        }
+      });
+    }
+  } catch(e) {
+    failedSyms = validSyms.slice();
+    msgs.push('Twelve Data nätverksfel: '+e.message);
+  }
+
+  // --- Step 2: Yahoo Finance fallback for failed symbols ---
+  if (failedSyms.length > 0) {
+    status.textContent = 'Twelve Data: '+ok+' ok – provar Yahoo Finance för '+failedSyms.length+' ticker(s)...';
+    for (var i = 0; i < failedSyms.length; i++) {
+      var sym = failedSyms[i];
+      var price = await fetchFromYahoo(sym);
+      if (price !== null) {
+        symMap[sym].price = parseFloat(price).toFixed(4);
+        symMap[sym].date = today;
+        symMap[sym]._source = 'Yahoo';
+        yahooOk++;
+      } else {
+        fail++;
+        msgs.push(sym+': hittades inte i Twelve Data eller Yahoo Finance');
+      }
+      if (i < failedSyms.length - 1) await new Promise(function(r){ setTimeout(r, 300); });
+    }
+  }
+
+  renderSecurities();
+  autoSave();
+  btn.disabled = false;
+  var parts = [];
+  if (ok > 0) parts.push(ok+' från Twelve Data');
+  if (yahooOk > 0) parts.push(yahooOk+' från Yahoo');
+  if (fail > 0) parts.push(fail+' misslyckades');
+  if (manualCount > 0) parts.push(manualCount+' manuella');
+  status.textContent = parts.join(', ');
+  if (msgs.length > 0) alert('Problem:\n'+msgs.join('\n'));
+}
+
+async function testSymbol() {
+  var sym = document.getElementById('test-sym').value.trim();
+  if (!sym) { alert('Ange en symbol att testa.'); return; }
+  var cur = document.getElementById('test-cur').value;
+  var apiKey = getApiKey();
+  var btn = document.getElementById('test-btn');
+  var status = document.getElementById('test-status');
+  var result = document.getElementById('test-result');
+  btn.disabled = true;
+  status.textContent = 'Testar via server...';
+  result.className = 'test-result';
+  result.textContent = '';
+  try {
+    var resp = await fetch('http://192.168.1.138:8765/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol: sym, api_key: apiKey })
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var data = await resp.json();
+    if (data.error) {
+      result.className = 'test-result err';
+      result.textContent = 'Fel: ' + data.error;
+    } else {
+      var price = parseFloat(data.price);
+      var sek = getSEK(price, cur);
+      var sekStr = sek !== null ? ' = ' + sek.toFixed(2) + ' SEK' : ' (hämta valutakurs för omräkning)';
+      result.className = 'test-result ok';
+      result.textContent = sym + ': ' + price.toFixed(4) + ' ' + cur + sekStr + ' (källa: ' + data.source + ')';
+    }
+  } catch(e) {
+    result.className = 'test-result err';
+    result.textContent = 'Kunde inte nå servern: ' + e.message + '. Kontrollera att server.py körs.';
+  }
+  btn.disabled = false;
+  status.textContent = '';
+}
+async function runFetchNow() {
+  var btn = document.getElementById('run-fetch-btn');
+  var status = document.getElementById('fetch-status');
+  if (btn) btn.disabled = true;
+  if (status) status.textContent = 'Kör hämtning på servern...';
+  try {
+    var resp = await fetch('http://192.168.1.138:8765/fetch', { method: 'POST' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    if (btn) btn.disabled = false;
+    if (status) status.textContent = 'Hämtning klar! ' + (data.ok||0) + ' kurser uppdaterade';
+    // Auto-import the fresh prices after 1 second
+    setTimeout(function() { importFromServer(); }, 1000);
+  } catch(e) {
+    if (btn) btn.disabled = false;
+    if (status) status.textContent = 'Fel';
+    alert('Hämtning misslyckades:\n' + e.message + '\n\nKontrollera att server.py körs.');
+  }
+}
+
+
+async function loadSecuritiesFromServer() {
+  var btn = document.getElementById('load-sec-btn');
+  var status = document.getElementById('fetch-status');
+  if (btn) btn.disabled = true;
+  if (status) status.textContent = 'Laddar securities...';
+  try {
+    var resp = await fetch('http://192.168.1.138:8765/securities.json?t=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var list = await resp.json();
+    if (!Array.isArray(list) || list.length === 0) throw new Error('Inga securities i filen');
+
+    // Merge: keep existing prices/dates, add new from server
+    var existing = {};
+    securities.forEach(function(s) { existing[s.sym] = s; });
+
+    securities = list.map(function(s) {
+      var prev = existing[s.sym];
+      return {
+        id: prev ? prev.id : Date.now() + Math.random(),
+        sym: s.sym || '',
+        name: s.name || '',
+        ext: s.ext || '',
+        currency: s.currency || 'SEK',
+        price: prev ? prev.price : (s.price || ''),
+        date: prev ? prev.date : (s.date || ''),
+        manual: s.manual || false
+      };
+    });
+
+    renderSecurities();
+    autoSave();
+    if (btn) btn.disabled = false;
+    if (status) status.textContent = list.length + ' securities laddade';
+  } catch(e) {
+    if (btn) btn.disabled = false;
+    if (status) status.textContent = 'Fel';
+    alert('Kunde inte ladda securities:\n' + e.message);
+  }
+}
+
+async function importFromServer() {
+  var btn = document.getElementById('server-btn');
+  var status = document.getElementById('fetch-status');
+  if (btn) btn.disabled = true;
+  if (status) status.textContent = 'Hamtar fran server...';
+  try {
+    var resp = await fetch('http://192.168.1.138:8765/prices.json?t=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var data = await resp.json();
+    if (data._fx) {
+      fxRates = data._fx;
+      fxRates.SEK = 1;
+      var badge = document.getElementById('rates-badge');
+      if (badge) { badge.textContent = 'fran server'; badge.className = 'badge ok'; }
+      renderFxGrid();
+    }
+    var today = data._date || new Date().toISOString().slice(0,10);
+    var ok = 0; var notFound = [];
+    securities.forEach(function(s) {
+      if (s.manual) return;
+      var entry = data[s.sym];
+      if (!entry) { notFound.push(s.sym); return; }
+      s.price = entry.raw_price.toFixed(4);
+      s.date = entry.date || today;
+      ok++;
+    });
+    renderSecurities();
+    autoSave();
+    if (btn) btn.disabled = false;
+    if (status) status.textContent = ok + ' importerade' + (notFound.length ? ', ' + notFound.length + ' saknas' : '');
+    if (notFound.length) alert('Saknas i prices.json:\n' + notFound.join('\n'));
+  } catch(e) {
+    if (btn) btn.disabled = false;
+    if (status) status.textContent = 'Serverfel';
+    alert('Kunde inte hamta fran server:\n' + e.message);
+  }
+}
+
+async function saveToServer() {
+  var btn = document.getElementById('save-server-btn');
+  var status = document.getElementById('fetch-status');
+  btn.disabled = true;
+  status.textContent = 'Sparar till server...';
+
+  // Build securities list for server
+  var secList = securities.map(function(s) {
+    return {
+      sym: s.sym,
+      name: s.name,
+      ext: s.ext || s.sym,
+      currency: s.currency || 'SEK',
+      manual: s.manual || false
+    };
+  });
+
+  try {
+    // Save securities.json
+    var resp = await fetch('http://192.168.1.138:8765/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ securities: secList })
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var result = await resp.json();
+    if (result.error) throw new Error(result.error);
+
+    status.textContent = 'Sparad! Hämtar kurser...';
+
+    // Trigger price fetch on server
+    var resp2 = await fetch('http://192.168.1.138:8765/fetch', { method: 'POST' });
+    if (!resp2.ok) throw new Error('Kurshämtning misslyckades');
+    var result2 = await resp2.json();
+
+    btn.disabled = false;
+    status.textContent = 'Klart! ' + (result2.ok||0) + ' kurser hämtade';
+
+    // Auto-import the fresh prices
+    setTimeout(function() { importFromServer(); }, 1000);
+
+  } catch(e) {
+    btn.disabled = false;
+    status.textContent = 'Fel';
+    alert('Kunde inte spara till server:\n' + e.message + '\n\nKontrollera att server.py körs.');
+  }
+}
+
+
+
+// EXPORT
+function formatDate(d) {
+  if (!d) return '';
+  var p = d.split('-');
+  if (p.length < 3) return '';
+  return p[1]+'/'+p[2]+'/'+p[0];
+}
+
+function buildCSV() {
+  var lines = [];
+  securities.forEach(function(s) {
+    var csvSym = s.sym.trim() ? s.sym.trim() : ((s.ext && s.ext.trim()) ? s.ext.trim() : getExtSym(s.sym.trim()));
+    var sek = getSEK(s.price, s.currency);
+    var price = sek !== null ? sek : parseFloat(s.price);
+    var date = formatDate(s.date);
+    if (csvSym && date && !isNaN(price) && price > 0) {
+      lines.push(csvSym+','+price.toFixed(2)+','+date);
+    }
+  });
+  return lines.length ? lines.join('\n')+'\n' : '';
+}
+
+function refreshPreview() {
+  if (securities.length === 0) {
+    document.getElementById('csv-pre').textContent = 'Inga securities inlagda ännu.';
+    return;
+  }
+  var csv = buildCSV();
+  if (csv) { document.getElementById('csv-pre').textContent = csv; return; }
+  var msgs = ['Inga rader kunde exporteras:'];
+  securities.forEach(function(s) {
+    var sek = getSEK(s.price, s.currency);
+    var price = sek !== null ? sek : parseFloat(s.price);
+    var issues = [];
+    if (!s.sym.trim()) issues.push('symbol saknas');
+    if (!s.price || isNaN(parseFloat(s.price))) issues.push('pris saknas');
+    else if (price <= 0) issues.push('pris är 0');
+    else if (s.currency !== 'SEK' && sek === null) issues.push('valutakurs för '+s.currency+' saknas');
+    if (!s.date) issues.push('datum saknas');
+    msgs.push('  '+(s.name||s.sym||'namnlös')+': '+(issues.length ? issues.join(', ') : 'ok'));
+  });
+  document.getElementById('csv-pre').textContent = msgs.join('\n');
+}
+
+
+function downloadImportScript() {
+  var script = '# Quicken CSV Import Helper\n$QuickenIni = "C:\\ProgramData\\Quicken\\Config\\Quicken.ini"\n$DownloadDir = "$env:USERPROFILE\\Downloads"\n$CsvFile = Get-ChildItem "$DownloadDir\\quicken_import_*.csv" | Sort-Object LastWriteTime -Descending | Select-Object -First 1\nif (-not $CsvFile) {\n    Write-Host "Ingen quicken_import_*.csv hittades i Downloads." -ForegroundColor Red\n    Write-Host "Ladda ner CSV-filen fran appen forst." -ForegroundColor Yellow\n    pause; exit\n}\nWrite-Host "Hittade: $($CsvFile.Name)" -ForegroundColor Green\n$ini = Get-Content $QuickenIni -Raw\n$ini = $ini -replace "sDecimal=,", "sDecimal=."\n$ini = $ini -replace "sDecimal=;", "sDecimal=."\nSet-Content $QuickenIni $ini -NoNewline\nWrite-Host "sDecimal andrad till punkt i Quicken.ini" -ForegroundColor Green\nWrite-Host ""\nWrite-Host "Oppnar Downloads-mappen - importera $($CsvFile.Name) i Quicken nu." -ForegroundColor Yellow\nexplorer.exe $DownloadDir\nWrite-Host "Tryck ENTER nar du ar klar med importen i Quicken..." -ForegroundColor Yellow\nRead-Host\n$ini = Get-Content $QuickenIni -Raw\n$ini = $ini -replace "sDecimal=\\.", "sDecimal=,"\nSet-Content $QuickenIni $ini -NoNewline\nWrite-Host "sDecimal aterstaild till komma i Quicken.ini" -ForegroundColor Green\nWrite-Host "Klart!" -ForegroundColor Green\npause';
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([script], {type: 'text/plain;charset=utf-8'}));
+  a.download = 'importera_quicken.ps1';
+  a.click();
+}
+
+function downloadCSV() {
+  var csv = buildCSV();
+  if (!csv.trim()) { alert('Ingen giltig data att exportera.'); return; }
+  var BOM = '\uFEFF';
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([BOM+csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = 'quicken_import_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+function applyBulkDate() {
+  var d = document.getElementById('bulk-date').value;
+  if (!d) return;
+  securities.forEach(function(s) { s.date=d; });
+  renderSecurities();
+  autoSave();
+}
+
+function downloadSecuritiesCSV() {
+  if (securities.length === 0) { alert('Inga securities att exportera.'); return; }
+  var BOM = '\uFEFF';
+  var rows = [['Min symbol','Namn','Ext. symbol (Twelve Data)','Valuta','Pris (orig.)','Pris i SEK','Datum','Manuell']];
+  securities.forEach(function(s) {
+    var sek = getSEK(s.price, s.currency);
+    var sekStr = sek !== null ? sek.toFixed(2) : '';
+    rows.push([
+      s.sym, s.name, s.ext, s.currency,
+      s.price ? parseFloat(s.price).toFixed(4) : '',
+      sekStr,
+      s.date || '',
+      s.manual ? 'Ja' : ''
+    ]);
+  });
+  var csv = BOM + rows.map(function(r) {
+    return r.map(function(cell) {
+      var c = (cell||'').toString();
+      if (c.indexOf(';') > -1 || c.indexOf('"') > -1 || c.indexOf('\n') > -1) {
+        c = '"' + c.replace(/"/g,'""') + '"';
+      }
+      return c;
+    }).join(';');
+  }).join('\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = 'securities_lista_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+// JSON BACKUP
+function exportJSON() {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(buildState(),null,2)],{type:'application/json'}));
+  a.download = 'quicken_instellningar.json';
+  a.click();
+}
+
+function importJSON() {
+  var input = document.createElement('input');
+  input.type='file'; input.accept='.json';
+  input.onchange = function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      try { applyState(JSON.parse(ev.target.result)); doSave(); }
+      catch(err) { alert('Kunde inte läsa filen: '+err.message); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// INIT
+document.getElementById('bulk-date').value = new Date().toISOString().slice(0,10);
+try {
+  var saved = localStorage.getItem('qi_state');
+  if (saved) {
+    applyState(JSON.parse(saved));
+    var el = document.getElementById('autosave-msg');
+    if (el) el.textContent = 'Laddad fran minnet';
+  } else {
+    renderSecurities();
+    renderFxGrid();
+  }
+} catch(e) {
+  renderSecurities();
+  renderFxGrid();
+}
+
+// Auto-load securities from server on startup
+setTimeout(function() {
+  fetch('http://192.168.1.138:8765/securities.json?t=' + Date.now())
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(list) {
+      if (!Array.isArray(list) || list.length === 0) return;
+      var existing = {};
+      securities.forEach(function(s) { existing[s.sym] = s; });
+      if (securities.length === 0) {
+        securities = list.map(function(s) {
+          return {
+            id: Date.now() + Math.random(),
+            sym: s.sym || '',
+            name: s.name || '',
+            ext: s.ext || '',
+            currency: s.currency || 'SEK',
+            price: '',
+            date: '',
+            manual: s.manual || false
+          };
+        });
+        renderSecurities();
+        autoSave();
+        var el = document.getElementById('autosave-msg');
+        if (el) el.textContent = 'Securities laddade fran server';
+      }
+    })
+    .catch(function() {});
+}, 500);
+
+</script>
+</body>
+</html>

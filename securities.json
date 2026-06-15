@@ -1,0 +1,240 @@
+[
+  {
+    "sym": "0P0001ECQR.ST",
+    "name": "Avanza Global",
+    "ext": "0P0001ECQR.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "RNMBF",
+    "name": "Rheinmetall AG",
+    "ext": "RHM.DE",
+    "currency": "EUR",
+    "manual": false
+  },
+  {
+    "sym": "0P0001BM0V.ST",
+    "name": "Avanza Auto 3",
+    "ext": "0P0001BM0V.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P00000L33.ST",
+    "name": "AMF Aktiefond Global",
+    "ext": "0P00000L33.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P0001Q6F8.ST",
+    "name": "DNB Europa Indeks",
+    "ext": "0P0001Q6F8.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "ERIC-B.ST",
+    "name": "Ericsson B",
+    "ext": "ERIC-B.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P0001F3XN.ST",
+    "name": "Handelsbanken Global Index (A1 SEK)",
+    "ext": "0P0001F3XN.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P00013668.ST",
+    "name": "Länsförsäkringar Tillväxtmarknad Index A",
+    "ext": "0P00013668.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P0000ULAP.ST",
+    "name": "Spiltan Aktiefond Investmentbolag",
+    "ext": "0P0000ULAP.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P00009NT9.ST",
+    "name": "Spiltan Räntefond Sverige",
+    "ext": "0P00009NT9.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P0000RYCW.ST",
+    "name": "Storebrand Emerging Markets A SEK",
+    "ext": "0P0000RYCW.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P00000FYN.ST",
+    "name": "Storebrand Europa A SEK",
+    "ext": "0P00000FYN.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P00017TAQ.ST",
+    "name": "Storebrand Global Plus A SEK",
+    "ext": "0P00017TAQ.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P00000FYQ.ST",
+    "name": "Storebrand Sverige A SEK",
+    "ext": "0P00000FYQ.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "TELIA.ST",
+    "name": "Telia Company AB _1",
+    "ext": "TELIA.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "DFEN.DE",
+    "name": "VanEck Defense UCITS ETF USD A",
+    "ext": "DFEN.DE",
+    "currency": "EUR",
+    "manual": false
+  },
+  {
+    "sym": "XDEF.ST",
+    "name": "Xtrackers Europe Defence Technologies UCITS ETF 1C",
+    "ext": "XDEF.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P00000K19.ST",
+    "name": "AMF Räntefond Lång",
+    "ext": "0P00000K19.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P00005U1J.ST",
+    "name": "Avanza Zero",
+    "ext": "0P00005U1J.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P0001H70C.ST",
+    "name": "Captor Iris Bond A",
+    "ext": "0P0001H70C.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P0000I3KB.ST",
+    "name": "SEB Sverige Indexnära A",
+    "ext": "0P0000I3KB.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P00000FQP.ST",
+    "name": "Swedbank Robur Räntefond Kort A",
+    "ext": "0P00000FQP.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "SHB-B.ST",
+    "name": "Handelsbanken B",
+    "ext": "SHB-B.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "INVE-A.ST",
+    "name": "Investor A",
+    "ext": "INVE-A.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "LUMEN.ST",
+    "name": "LumenRadio",
+    "ext": "LUMEN.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "SWED-A.ST",
+    "name": "Swedbank A",
+    "ext": "SWED-A.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "TRAN-B.ST",
+    "name": "Transferator B",
+    "ext": "TRAN-B.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "W5.ST",
+    "name": "W5 solutions",
+    "ext": "W5.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "0P0001H4TL.ST",
+    "name": "Avanza Emerging Markets",
+    "ext": "0P0001H4TL.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "DFSV.DE",
+    "name": "SPDR S&P Europe Defense Vision UCITS ETF (Acc)",
+    "ext": "DFSV.DE",
+    "currency": "EUR",
+    "manual": false
+  },
+  {
+    "sym": "ALVO-SDB.ST",
+    "name": "Alvotech SDB",
+    "ext": "ALVO-SDB.ST",
+    "currency": "SEK",
+    "manual": false
+  },
+  {
+    "sym": "BA.L",
+    "name": "BAE Systems PLC",
+    "ext": "BA.L",
+    "currency": "GBP",
+    "manual": false
+  },
+  {
+    "sym": "GENO.OL",
+    "name": "General Oceans",
+    "ext": "GENO.OL",
+    "currency": "NOK",
+    "manual": false
+  },
+  {
+    "sym": "HO.PA",
+    "name": "Thales",
+    "ext": "HO.PA",
+    "currency": "EUR",
+    "manual": false
+  }
+]
