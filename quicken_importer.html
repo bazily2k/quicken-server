@@ -364,6 +364,25 @@ input:focus,select:focus{border-color:var(--border2);}
     </div>
 
     <div class="card help">
+      <div class="ctitle">Fliken Historisk import</div>
+      <p>Hämtar historiska kurser från Yahoo Finance och genererar en QIF-fil som importeras direkt i Quicken via <strong>File → Import → QIF File</strong>.</p>
+      <p><strong>Välj securities</strong> — Kryssa i de värdepapper du vill ha historik för. Alla är förvalda. Använd "Välj alla" / "Avmarkera alla" för snabbval.</p>
+      <p><strong>Datumintervall</strong> — Ange från- och till-datum manuellt, eller använd snabbknapparna:</p>
+      <p style="padding-left:1rem;"><strong>2023 / 2024 / 2025</strong> — Sätter hela kalenderåret (1 jan – 31 dec).</p>
+      <p style="padding-left:1rem;"><strong>I år</strong> — Från 1 januari i år till dagens datum.</p>
+      <p style="padding-left:1rem;"><strong>Senaste 12 mån / 3 år</strong> — Rullande intervall bakåt från idag.</p>
+      <p style="padding-left:1rem;"><strong>Fritt år</strong> — Skriv in valfritt år (t.ex. 2019) och klicka "Sätt år" för att sätta hela det kalenderåret.</p>
+      <p><strong>Frekvens</strong> — Styr hur många datapunkter som hämtas:</p>
+      <p style="padding-left:1rem;"><strong>Sista handelsdagen varje månad</strong> — En kurs per månad, sista tillgängliga handelsdagen. Bra för månatlig portföljuppföljning.</p>
+      <p style="padding-left:1rem;"><strong>Första handelsdagen varje månad</strong> — En kurs per månad, första tillgängliga handelsdagen.</p>
+      <p style="padding-left:1rem;"><strong>Varje vecka</strong> — En kurs per vecka på vald veckodag (mån–fre). Om börsen var stängd den dagen används närmaste tillgängliga dag i samma vecka.</p>
+      <p style="padding-left:1rem;"><strong>Varje handelsdag</strong> — Alla tillgängliga kursdagar. Ger störst fil men mest detaljerad historik.</p>
+      <p><strong>Valutaomräkning</strong> — Kurser i annan valuta (EUR, GBP, NOK m.fl.) räknas automatiskt om till SEK med historiska valutakurser för respektive datum.</p>
+      <p><strong>QIF-filen</strong> laddas ner automatiskt när hämtningen är klar. Filnamnet innehåller datumintervallet, t.ex. <code style="font-family:monospace;">quicken_historik_2024-01-01_2024-12-31.qif</code>.</p>
+      <p><strong>Obs:</strong> Hämtningen kan ta en stund vid många securities eller långa perioder — progressbaren visar att arbete pågår.</p>
+    </div>
+
+    <div class="card help">
       <div class="ctitle">Serverinformation</div>
       <p><strong>Servern</strong> körs automatiskt och behöver inte startas manuellt. Den startar om sig själv vid uppstart och om den kraschar.</p>
       <p><strong>Kurshämtning</strong> sker automatiskt vardagar kl 18:30 via ett schemalagt jobb på servern. Aktuell kurs hämtas om börsen är öppen, annars används senaste stängningskurs automatiskt.</p>
