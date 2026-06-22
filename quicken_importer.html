@@ -231,6 +231,10 @@ input:focus,select:focus{border-color:var(--border2);}
         <button class="btn sm" onclick="histSetRange('ytd')">I år</button>
         <button class="btn sm" onclick="histSetRange('1y')">Senaste 12 mån</button>
         <button class="btn sm" onclick="histSetRange('3y')">Senaste 3 år</button>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+          <input type="number" id="hist-custom-year" placeholder="År t.ex. 2021" min="2000" max="2099" style="width:140px;"/>
+          <button class="btn sm" onclick="histSetCustomYear()">Sätt år</button>
+        </div>
       </div>
     </div>
 
@@ -1136,6 +1140,15 @@ function histSelectNone() {
 
 function histModeChange() {
   // Inget extra behövs – värdet läses vid fetch
+}
+
+function histSetCustomYear() {
+  var yr = document.getElementById('hist-custom-year').value.trim();
+  if (!yr || isNaN(parseInt(yr))) {
+    document.getElementById('hist-status').textContent = 'Ange ett giltigt år.';
+    return;
+  }
+  histSetRange(yr);
 }
 
 function histSetRange(preset) {
