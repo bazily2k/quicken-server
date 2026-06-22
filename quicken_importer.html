@@ -101,6 +101,7 @@ input:focus,select:focus{border-color:var(--border2);}
     <button class="tab" onclick="showTab('translations')">Översättningar</button>
     <button class="tab" onclick="showTab('rates')">Valutakurser</button>
     <button class="tab" onclick="showTab('export')">Exportera</button>
+    <button class="tab" onclick="showTab('history')">Historisk import</button>
     <button class="tab" onclick="showTab('help')">Hjälp</button>
   </div>
 
@@ -204,6 +205,82 @@ input:focus,select:focus{border-color:var(--border2);}
     </div>
   </div>
 
+  <!-- HISTORY -->
+  <div id="tab-history" style="display:none;">
+    <div class="card">
+      <div class="ctitle">Välj securities</div>
+      <div style="display:flex;gap:8px;margin-bottom:.7rem;">
+        <button class="btn sm" onclick="histSelectAll()">Välj alla</button>
+        <button class="btn sm" onclick="histSelectNone()">Avmarkera alla</button>
+      </div>
+      <div id="hist-sec-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;max-height:260px;overflow-y:auto;border:0.5px solid var(--border);border-radius:var(--r);padding:.7rem;background:var(--bg2);"></div>
+    </div>
+
+    <div class="card">
+      <div class="ctitle">Datumintervall</div>
+      <div class="row">
+        <label style="font-size:13px;color:var(--text2);width:60px;">Från</label>
+        <input type="date" id="hist-start" style="flex:1;"/>
+        <label style="font-size:13px;color:var(--text2);width:60px;">Till</label>
+        <input type="date" id="hist-end" style="flex:1;"/>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:.5rem;">
+        <button class="btn sm" onclick="histSetRange('2023')">2023</button>
+        <button class="btn sm" onclick="histSetRange('2024')">2024</button>
+        <button class="btn sm" onclick="histSetRange('2025')">2025</button>
+        <button class="btn sm" onclick="histSetRange('ytd')">I år</button>
+        <button class="btn sm" onclick="histSetRange('1y')">Senaste 12 mån</button>
+        <button class="btn sm" onclick="histSetRange('3y')">Senaste 3 år</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ctitle">Frekvens</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <input type="radio" name="hist-mode" value="last_of_month" checked onchange="histModeChange()"/>
+          <span style="font-size:13px;">Sista handelsdagen varje månad</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <input type="radio" name="hist-mode" value="first_of_month" onchange="histModeChange()"/>
+          <span style="font-size:13px;">Första handelsdagen varje månad</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <input type="radio" name="hist-mode" value="weekday" onchange="histModeChange()"/>
+          <span style="font-size:13px;">Varje vecka — </span>
+          <select id="hist-weekday" style="width:120px;" onchange="histModeChange()">
+            <option value="0">måndag</option>
+            <option value="1">tisdag</option>
+            <option value="2" selected>onsdag</option>
+            <option value="3">torsdag</option>
+            <option value="4">fredag</option>
+          </select>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <input type="radio" name="hist-mode" value="all" onchange="histModeChange()"/>
+          <span style="font-size:13px;">Varje handelsdag (kan bli stor fil)</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ctitle">Hämta och exportera</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:.9rem;">
+        Historiska kurser hämtas från Yahoo Finance. Valutaomräkning till SEK sker automatiskt.
+        QIF-filen importeras i Quicken via <strong>File → Import → QIF File</strong>.
+      </p>
+      <div class="arow" style="margin-top:0;">
+        <button class="btn p" onclick="fetchHistory()" id="hist-btn">Hämta historik och ladda ner QIF</button>
+      </div>
+      <div id="hist-status" style="margin-top:.8rem;font-size:13px;color:var(--text2);min-height:24px;"></div>
+      <div id="hist-progress" style="display:none;margin-top:.5rem;">
+        <div style="background:var(--bg2);border-radius:99px;height:6px;overflow:hidden;border:0.5px solid var(--border);">
+          <div id="hist-bar" style="height:100%;background:var(--accent);width:0%;transition:width .3s;border-radius:99px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- HELP -->
   <div id="tab-help" style="display:none;">
 
@@ -303,14 +380,15 @@ var CURR = ['SEK','USD','EUR','GBP','DKK','NOK','CHF','JPY','CAD','AUD'];
 var saveTimer = null;
 
 function showTab(name) {
-  ['securities','translations','rates','export','help'].forEach(function(t) {
+  ['securities','translations','rates','export','history','help'].forEach(function(t) {
     document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
   });
   document.querySelectorAll('.tab').forEach(function(b,i) {
-    b.classList.toggle('active', ['securities','translations','rates','export','help'][i]===name);
+    b.classList.toggle('active', ['securities','translations','rates','export','history','help'][i]===name);
   });
   if (name==='export') refreshPreview();
   if (name==='rates') renderFxGrid();
+  if (name==='history') histRenderSecurities();
 }
 
 function getSEK(price, currency) {
@@ -1027,6 +1105,131 @@ setTimeout(function() {
     })
     .catch(function() {});
 }, 500);
+
+// ── HISTORISK IMPORT ──────────────────────────────────────────────────────────
+
+function histRenderSecurities() {
+  var list = document.getElementById('hist-sec-list');
+  if (!list) return;
+  list.innerHTML = '';
+  securities.forEach(function(s) {
+    if (s.manual) return;
+    var id = 'hist-chk-' + s.sym.replace(/[^a-zA-Z0-9]/g,'_');
+    var label = document.createElement('label');
+    label.style.cssText = 'display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;';
+    label.innerHTML =
+      '<input type="checkbox" id="' + id + '" value="' + esc(s.sym) + '" checked style="cursor:pointer;"/>' +
+      '<span style="color:var(--text2);font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(s.name) + '">' +
+        '<strong style="color:var(--text);">' + esc(s.sym) + '</strong> ' + esc(s.name) +
+      '</span>';
+    list.appendChild(label);
+  });
+}
+
+function histSelectAll() {
+  document.querySelectorAll('#hist-sec-list input[type=checkbox]').forEach(function(c){ c.checked=true; });
+}
+
+function histSelectNone() {
+  document.querySelectorAll('#hist-sec-list input[type=checkbox]').forEach(function(c){ c.checked=false; });
+}
+
+function histModeChange() {
+  // Inget extra behövs – värdet läses vid fetch
+}
+
+function histSetRange(preset) {
+  var now = new Date();
+  var y = now.getFullYear();
+  var start, end;
+  if (preset === 'ytd') {
+    start = y + '-01-01';
+    end   = now.toISOString().split('T')[0];
+  } else if (preset === '1y') {
+    var d = new Date(now); d.setFullYear(d.getFullYear()-1);
+    start = d.toISOString().split('T')[0];
+    end   = now.toISOString().split('T')[0];
+  } else if (preset === '3y') {
+    var d = new Date(now); d.setFullYear(d.getFullYear()-3);
+    start = d.toISOString().split('T')[0];
+    end   = now.toISOString().split('T')[0];
+  } else {
+    // År t.ex. '2024'
+    start = preset + '-01-01';
+    end   = preset + '-12-31';
+  }
+  document.getElementById('hist-start').value = start;
+  document.getElementById('hist-end').value   = end;
+}
+
+function fetchHistory() {
+  var symbols = [];
+  document.querySelectorAll('#hist-sec-list input[type=checkbox]:checked').forEach(function(c){
+    symbols.push(c.value);
+  });
+  if (!symbols.length) {
+    document.getElementById('hist-status').textContent = 'Välj minst en security.';
+    return;
+  }
+  var start = document.getElementById('hist-start').value;
+  var end   = document.getElementById('hist-end').value;
+  if (!start || !end) {
+    document.getElementById('hist-status').textContent = 'Ange datumintervall.';
+    return;
+  }
+  var mode = document.querySelector('input[name="hist-mode"]:checked').value;
+  var weekday = parseInt(document.getElementById('hist-weekday').value, 10);
+
+  var btn = document.getElementById('hist-btn');
+  btn.disabled = true;
+  var status = document.getElementById('hist-status');
+  var progress = document.getElementById('hist-progress');
+  var bar = document.getElementById('hist-bar');
+  status.textContent = 'Hämtar historiska kurser från Yahoo Finance — detta kan ta en stund...';
+  progress.style.display = '';
+  bar.style.width = '0%';
+
+  // Animera progressbaren medan vi väntar
+  var pct = 0;
+  var ticker = setInterval(function() {
+    pct = Math.min(pct + 1, 90);
+    bar.style.width = pct + '%';
+  }, 400);
+
+  fetch('/history', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({symbols: symbols, start: start, end: end, mode: mode, weekday: weekday})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    clearInterval(ticker);
+    bar.style.width = '100%';
+    btn.disabled = false;
+    if (data.error) {
+      status.textContent = 'Fel: ' + data.error;
+      return;
+    }
+    status.textContent = 'Klart! ' + data.count + ' kursposter för ' + data.securities + ' securities. Laddar ner QIF...';
+    // Ladda ner QIF-filen
+    var blob = new Blob([data.qif], {type: 'text/plain'});
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url;
+    a.download = 'quicken_historik_' + start + '_' + end + '.qif';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setTimeout(function(){ progress.style.display='none'; bar.style.width='0%'; }, 2000);
+  })
+  .catch(function(e) {
+    clearInterval(ticker);
+    btn.disabled = false;
+    status.textContent = 'Nätverksfel: ' + e.message;
+    progress.style.display = 'none';
+  });
+}
 
 </script>
 </body>
