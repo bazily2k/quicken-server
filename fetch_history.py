@@ -213,21 +213,18 @@ def nearest_fx(fx_by_date, target_date):
     # Fallback: närmaste
     return min(fx_by_date.values(), key=lambda v: v)
 
-# ── QIF-generering ─────────────────────────────────────────────────────────────
+# ── CSV-generering (matchar befintligt Quicken-importformat) ───────────────────
 
-def build_qif(results):
+def build_csv(results):
     """
-    Bygger QIF-strängformat för Quicken Securities Prices.
-    results: list of {sym, date, sek_price}
+    Bygger CSV i samma format som befintlig export: symbol,pris,datum (MM/DD/YYYY)
+    Importeras med samma PowerShell-script som vanlig kurshämtning.
     """
-    lines = ["!Type:Prices"]
+    lines = []
     for r in results:
         d = r["date"]
-        # Quicken QIF datum-format: MM/DD/YYYY
-        date_str = f"{d.month}/{d.day}/{d.year}"
-        # Format: "SYMBOL",pris,datum
-        lines.append(f'"{r["sym"]}",{r["sek_price"]},{date_str}')
-        lines.append("^")
+        date_str = f"{d.month:02d}/{d.day:02d}/{d.year}"
+        lines.append(f'{r["sym"]},{r["sek_price"]:.2f},{date_str}')
     return "\n".join(lines) + "\n"
 
 # ── Huvudfunktion ─────────────────────────────────────────────────────────────
@@ -283,30 +280,47 @@ def main():
 
     log(f"Hämtar historik för {len(selected)} securities: {start_str} → {end_str} ({mode})")
 
-    # Läs Twelve Data API-nyckel för fallback
+    # Läs Twelve Data API-nyckel
     config = load_json(CONFIG_FILE)
     api_key = config.get("twelvedata_api_key", "")
     if not api_key:
-        log("VARNING: Ingen Twelve Data API-nyckel i config.json – Twelve Data-fallback inaktivt")
+        log("VARNING: Ingen Twelve Data API-nyckel i config.json – hoppar över Twelve Data")
 
     all_results = []
     fx_cache = {}  # currency -> {date: fx_rate}
+
+    # Steg 1: Twelve Data för alla symboler
+    td_data = {}  # ext -> {date: price}
+    if api_key:
+        log(f"Hämtar historik från Twelve Data för {len(selected)} symboler...")
+        for sec in selected:
+            ext = sec.get("ext") or sec["sym"]
+            result = fetch_twelvedata_history(ext, start_date, end_date, api_key)
+            if result:
+                td_data[ext] = result
+            time.sleep(0.5)  # Twelve Data rate-limit
+
+    # Steg 2: Yahoo Finance för de som misslyckades
+    failed = [s for s in selected if (s.get("ext") or s["sym"]) not in td_data]
+    if failed:
+        log(f"Provar Yahoo Finance för {len(failed)} symboler...")
+        for sec in failed:
+            ext = sec.get("ext") or sec["sym"]
+            result = fetch_yahoo_history(ext, start_date, end_date)
+            if result:
+                td_data[ext] = result
+            else:
+                log(f"  ✗ {sec['sym']}: hittades inte på varken Twelve Data eller Yahoo")
+            time.sleep(0.3)
 
     for sec in selected:
         sym      = sec["sym"]
         ext      = sec.get("ext") or sym
         currency = sec.get("currency", "SEK")
 
-        log(f"Hämtar {sym} ({ext})...")
-        price_by_date = fetch_yahoo_history(ext, start_date, end_date)
-
-        if not price_by_date and api_key:
-            log(f"  Yahoo misslyckades – försöker Twelve Data för {sym}...")
-            price_by_date = fetch_twelvedata_history(ext, start_date, end_date, api_key)
-            time.sleep(0.5)  # Twelve Data rate-limit är striktare
-
+        price_by_date = td_data.get(ext, {})
         if not price_by_date:
-            log(f"  Hoppar över {sym} (inga data från varken Yahoo eller Twelve Data)")
+            log(f"  Hoppar över {sym} (inga data)")
             continue
 
         # Filtrera datum enligt valt läge
@@ -347,14 +361,14 @@ def main():
     # Sortera: datum, sedan symbol
     all_results.sort(key=lambda r: (r["date"], r["sym"]))
 
-    qif = build_qif(all_results)
+    qif = build_csv(all_results)
 
     log(f"Klar: {len(all_results)} kursposter för {len(selected)} securities")
     print(json.dumps({
         "ok": True,
         "count": len(all_results),
         "securities": len(selected),
-        "qif": qif,
+        "csv": qif,
     }))
 
 if __name__ == "__main__":
