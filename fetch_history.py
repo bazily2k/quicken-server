@@ -14,6 +14,7 @@ from datetime import datetime, date, timedelta
 from pathlib import Path
 
 SECURITIES_FILE = Path(__file__).parent / "securities.json"
+CONFIG_FILE     = Path(__file__).parent / "config.json"
 
 def log(msg):
     ts = datetime.now().strftime("%H:%M:%S")
@@ -114,7 +115,45 @@ def fetch_yahoo_history(symbol, start_date, end_date):
         log(f"  ✗ {symbol}: Yahoo-fel: {e}")
         return {}
 
-# ── Valutakurser (historik) ────────────────────────────────────────────────────
+# ── Twelve Data historik ───────────────────────────────────────────────────────
+
+def fetch_twelvedata_history(symbol, start_date, end_date, api_key):
+    """
+    Hämtar dagliga stängningspriser från Twelve Data time_series endpoint.
+    Returnerar dict {date: price} eller {}.
+    """
+    url = (
+        "https://api.twelvedata.com/time_series"
+        f"?symbol={urllib.parse.quote(symbol)}"
+        f"&interval=1day"
+        f"&start_date={start_date.isoformat()}"
+        f"&end_date={end_date.isoformat()}"
+        f"&outputsize=5000"
+        f"&apikey={urllib.parse.quote(api_key)}"
+    )
+    try:
+        data = http_get(url)
+        if data.get("status") == "error":
+            log(f"  ✗ {symbol}: Twelve Data fel: {data.get('message','okänt fel')}")
+            return {}
+        values = data.get("values", [])
+        if not values:
+            log(f"  ✗ {symbol}: Twelve Data returnerade inga värden")
+            return {}
+        prices = {}
+        for entry in values:
+            try:
+                d = date.fromisoformat(entry["datetime"][:10])
+                prices[d] = round(float(entry["close"]), 4)
+            except Exception:
+                continue
+        log(f"  ✓ {symbol}: {len(prices)} dagar hämtade från Twelve Data")
+        return prices
+    except Exception as e:
+        log(f"  ✗ {symbol}: Twelve Data nätverksfel: {e}")
+        return {}
+
+
 
 def fetch_fx_for_dates(currency, dates):
     """
@@ -244,19 +283,30 @@ def main():
 
     log(f"Hämtar historik för {len(selected)} securities: {start_str} → {end_str} ({mode})")
 
+    # Läs Twelve Data API-nyckel för fallback
+    config = load_json(CONFIG_FILE)
+    api_key = config.get("twelvedata_api_key", "")
+    if not api_key:
+        log("VARNING: Ingen Twelve Data API-nyckel i config.json – Twelve Data-fallback inaktivt")
+
     all_results = []
     fx_cache = {}  # currency -> {date: fx_rate}
 
     for sec in selected:
-        sym     = sec["sym"]
-        ext     = sec.get("ext") or sym
+        sym      = sec["sym"]
+        ext      = sec.get("ext") or sym
         currency = sec.get("currency", "SEK")
 
         log(f"Hämtar {sym} ({ext})...")
         price_by_date = fetch_yahoo_history(ext, start_date, end_date)
 
+        if not price_by_date and api_key:
+            log(f"  Yahoo misslyckades – försöker Twelve Data för {sym}...")
+            price_by_date = fetch_twelvedata_history(ext, start_date, end_date, api_key)
+            time.sleep(0.5)  # Twelve Data rate-limit är striktare
+
         if not price_by_date:
-            log(f"  Hoppar över {sym} (inga data)")
+            log(f"  Hoppar över {sym} (inga data från varken Yahoo eller Twelve Data)")
             continue
 
         # Filtrera datum enligt valt läge
