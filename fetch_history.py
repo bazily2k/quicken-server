@@ -107,7 +107,7 @@ def fetch_yahoo_history(symbol, start_date, end_date):
         for ts, price in zip(timestamps, closes):
             if price is None:
                 continue
-            d = date.fromtimestamp(ts)
+            d = date.fromtimestamp(ts + 43200)  # +12h för att undvika UTC-datumskift
             prices[d] = round(float(price), 4)
         log(f"  ✓ {symbol}: {len(prices)} dagar hämtade från Yahoo Finance")
         return prices
