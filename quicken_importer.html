@@ -270,11 +270,11 @@ input:focus,select:focus{border-color:var(--border2);}
     <div class="card">
       <div class="ctitle">Hämta och exportera</div>
       <p style="font-size:13px;color:var(--text2);margin-bottom:.9rem;">
-        Historiska kurser hämtas från Yahoo Finance. Valutaomräkning till SEK sker automatiskt.
-        QIF-filen importeras i Quicken via <strong>File → Import → QIF File</strong>.
+        Historiska kurser hämtas från Twelve Data (med Yahoo Finance som fallback). Valutaomräkning till SEK sker automatiskt.
+        CSV-filen importeras i Quicken med samma PowerShell-script (<strong>importera_quicken.ps1</strong>) som du redan använder.
       </p>
       <div class="arow" style="margin-top:0;">
-        <button class="btn p" onclick="fetchHistory()" id="hist-btn">Hämta historik och ladda ner QIF</button>
+        <button class="btn p" onclick="fetchHistory()" id="hist-btn">Hämta historik och ladda ner CSV</button>
       </div>
       <div id="hist-status" style="margin-top:.8rem;font-size:13px;color:var(--text2);min-height:24px;"></div>
       <div id="hist-progress" style="display:none;margin-top:.5rem;">
@@ -365,7 +365,7 @@ input:focus,select:focus{border-color:var(--border2);}
 
     <div class="card help">
       <div class="ctitle">Fliken Historisk import</div>
-      <p>Hämtar historiska kurser från Yahoo Finance och genererar en QIF-fil som importeras direkt i Quicken via <strong>File → Import → QIF File</strong>.</p>
+      <p>Hämtar historiska kurser från Yahoo Finance och genererar en CSV-fil i samma format som vanlig export. Importeras i Quicken med samma PowerShell-script (<strong>importera_quicken.ps1</strong>) som du redan använder.</p>
       <p><strong>Välj securities</strong> — Kryssa i de värdepapper du vill ha historik för. Alla är förvalda. Använd "Välj alla" / "Avmarkera alla" för snabbval.</p>
       <p><strong>Datumintervall</strong> — Ange från- och till-datum manuellt, eller använd snabbknapparna:</p>
       <p style="padding-left:1rem;"><strong>2023 / 2024 / 2025</strong> — Sätter hela kalenderåret (1 jan – 31 dec).</p>
@@ -378,7 +378,7 @@ input:focus,select:focus{border-color:var(--border2);}
       <p style="padding-left:1rem;"><strong>Varje vecka</strong> — En kurs per vecka på vald veckodag (mån–fre). Om börsen var stängd den dagen används närmaste tillgängliga dag i samma vecka.</p>
       <p style="padding-left:1rem;"><strong>Varje handelsdag</strong> — Alla tillgängliga kursdagar. Ger störst fil men mest detaljerad historik.</p>
       <p><strong>Valutaomräkning</strong> — Kurser i annan valuta (EUR, GBP, NOK m.fl.) räknas automatiskt om till SEK med historiska valutakurser för respektive datum.</p>
-      <p><strong>QIF-filen</strong> laddas ner automatiskt när hämtningen är klar. Filnamnet innehåller datumintervallet, t.ex. <code style="font-family:monospace;">quicken_historik_2024-01-01_2024-12-31.qif</code>.</p>
+      <p><strong>CSV-filen</strong> laddas ner automatiskt när hämtningen är klar. Filnamnet börjar med <code style="font-family:monospace;">quicken_import_historik_</code> och innehåller datumintervallet — PowerShell-scriptet hittar den automatiskt i Downloads.</p>
       <p><strong>Obs:</strong> Hämtningen kan ta en stund vid många securities eller långa perioder — progressbaren visar att arbete pågår.</p>
     </div>
 
@@ -1217,7 +1217,7 @@ function fetchHistory() {
   var status = document.getElementById('hist-status');
   var progress = document.getElementById('hist-progress');
   var bar = document.getElementById('hist-bar');
-  status.textContent = 'Hämtar historiska kurser från Yahoo Finance — detta kan ta en stund...';
+  status.textContent = 'Hämtar historiska kurser från Twelve Data — detta kan ta en stund...';
   progress.style.display = '';
   bar.style.width = '0%';
 
@@ -1242,13 +1242,14 @@ function fetchHistory() {
       status.textContent = 'Fel: ' + data.error;
       return;
     }
-    status.textContent = 'Klart! ' + data.count + ' kursposter för ' + data.securities + ' securities. Laddar ner QIF...';
-    // Ladda ner QIF-filen
-    var blob = new Blob([data.qif], {type: 'text/plain'});
+    status.textContent = 'Klart! ' + data.count + ' kursposter för ' + data.securities + ' securities. Laddar ner CSV...';
+    // Ladda ner CSV-filen (samma format som vanlig export → fungerar med importera_quicken.ps1)
+    var BOM  = '\uFEFF';
+    var blob = new Blob([BOM + data.csv], {type: 'text/csv;charset=utf-8'});
     var url  = URL.createObjectURL(blob);
     var a    = document.createElement('a');
     a.href   = url;
-    a.download = 'quicken_historik_' + start + '_' + end + '.qif';
+    a.download = 'quicken_import_historik_' + start + '_' + end + '.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
