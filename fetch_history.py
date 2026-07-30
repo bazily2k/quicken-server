@@ -160,19 +160,33 @@ def fetch_twelvedata_history(symbol, start_date, end_date, api_key):
 
 
 
+def fetch_fx_spot(currency):
+    """Hämtar aktuell valutakurs mot SEK från open.er-api.com som fallback."""
+    try:
+        data = http_get("https://open.er-api.com/v6/latest/SEK")
+        rates = data.get("rates", {})
+        rate = rates.get(currency)
+        if rate and rate > 0:
+            return round(1.0 / rate, 6)  # SEK per 1 enhet av currency
+        return None
+    except Exception:
+        return None
+
 def fetch_fx_for_dates(currency, dates):
     """
     Hämtar historiska valutakurser (till SEK) för en valuta.
-    Använder Yahoo Finance: SEKXXX=X (t.ex. SEKEUR=X → SEK/EUR).
+    Använder Yahoo Finance: EURSEK=X osv → antal SEK per 1 enhet valuta.
+    Fallback: open.er-api.com för aktuell kurs om Yahoo misslyckas.
     Returnerar dict {date: fx_rate} (SEK per 1 enhet av currency).
     """
     if currency == "SEK":
         return {d: 1.0 for d in dates}
 
-    # Yahoo symbol: t.ex. EURSEK=X → pris = antal SEK per 1 EUR
-    yahoo_sym = f"{currency}SEK=X"
     if not dates:
         return {}
+
+    # Yahoo symbol: t.ex. EURSEK=X → pris = antal SEK per 1 EUR
+    yahoo_sym = f"{currency}SEK=X"
     start_date = min(dates)
     end_date   = max(dates)
 
@@ -187,7 +201,7 @@ def fetch_fx_for_dates(currency, dates):
         data = http_get(url)
         result = data.get("chart", {}).get("result", [None])[0]
         if not result:
-            return {}
+            raise ValueError("Inga data från Yahoo för " + yahoo_sym)
         timestamps = result.get("timestamp", [])
         closes = result.get("indicators", {}).get("quote", [{}])[0].get("close", [])
         fx_by_date = {}
@@ -196,13 +210,23 @@ def fetch_fx_for_dates(currency, dates):
                 continue
             d = date.fromtimestamp(ts + 43200)  # +12h för att undvika UTC-datumskift
             fx_by_date[d] = round(float(price), 6)
-        return fx_by_date
-    except Exception:
+        if fx_by_date:
+            log(f"  ✓ {currency}/SEK: {len(fx_by_date)} valutakurser från Yahoo Finance")
+            return fx_by_date
+        raise ValueError("Tom FX-data från Yahoo för " + yahoo_sym)
+    except Exception as e:
+        log(f"  ⚠ {currency}/SEK Yahoo misslyckades ({e}) — provar open.er-api.com...")
+        spot = fetch_fx_spot(currency)
+        if spot:
+            log(f"  ✓ {currency}/SEK: använder aktuell kurs {spot} för alla datum (open.er-api.com)")
+            return {d: spot for d in dates}
+        log(f"  ✗ {currency}/SEK: kunde inte hämta valutakurs — priser ej omräknade!")
         return {}
 
 def nearest_fx(fx_by_date, target_date):
     """Hitta närmaste tillgängliga FX-kurs till ett givet datum."""
     if not fx_by_date:
+        log(f"  ✗ Ingen valutakurs tillgänglig för {target_date} — råpris används (ej SEK!)")
         return 1.0
     if target_date in fx_by_date:
         return fx_by_date[target_date]
