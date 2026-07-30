@@ -189,7 +189,8 @@ def fetch_fx_for_dates(currency, dates):
         for ts, price in zip(timestamps, closes):
             if price is None:
                 continue
-            fx_by_date[date.fromtimestamp(ts)] = round(float(price), 6)
+            d = date.fromtimestamp(ts + 43200)  # +12h för att undvika UTC-datumskift
+            fx_by_date[d] = round(float(price), 6)
         return fx_by_date
     except Exception:
         return {}
@@ -210,8 +211,8 @@ def nearest_fx(fx_by_date, target_date):
         d = target_date + timedelta(days=delta)
         if d in fx_by_date:
             return fx_by_date[d]
-    # Fallback: närmaste
-    return min(fx_by_date.values(), key=lambda v: v)
+    # Fallback: kursen för närmaste datum
+    return min(fx_by_date.items(), key=lambda kv: abs((kv[0] - target_date).days))[1]
 
 # ── CSV-generering (matchar befintligt Quicken-importformat) ───────────────────
 
