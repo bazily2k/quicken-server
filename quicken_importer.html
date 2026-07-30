@@ -200,7 +200,8 @@ input:focus,select:focus{border-color:var(--border2);}
         <button class="btn" onclick="refreshPreview()">Uppdatera förhandsvisning</button>
         <button class="btn" onclick="downloadSecuritiesCSV()">Exportera lista (Excel)</button>
         <button class="btn p" onclick="downloadCSV()">Ladda ner CSV-fil</button>
-        <button class="btn" onclick="downloadImportScript()" title="Ladda ner PowerShell-script för Quicken-import">Ladda ner importscript</button>
+        <button class="btn" onclick="downloadImportScript()" title="Ladda ner PowerShell-script för Quicken-import">Ladda ner importscript (.ps1)</button>
+        <button class="btn" onclick="downloadBatScript()" title="Ladda ner BAT-fil som kör importscriptet — alternativ om .ps1 blockeras av antivirusprogram">Ladda ner importscript (.bat)</button>
       </div>
     </div>
   </div>
@@ -338,12 +339,13 @@ input:focus,select:focus{border-color:var(--border2);}
       <p><strong>Uppdatera förhandsvisning</strong> — Visar hur CSV-filen kommer se ut. Om en rad saknar pris eller datum visas en förklaring varför den inte kan exporteras.</p>
       <p><strong>Exportera lista (Excel)</strong> — Skapar en CSV-fil med alla dina securities och deras kurser, formaterad för Excel med semikolon som avgränsare.</p>
       <p><strong>Ladda ner CSV-fil</strong> — Skapar Quicken-importfilen i formatet symbol,pris,mm/dd/yyyy utan rubrikrad och med en tom sista rad, precis som Quicken kräver.</p>
-      <p><strong>Ladda ner importscript</strong> — Laddar ner ett PowerShell-script (importera_quicken.ps1) som automatiskt ändrar sDecimal till punkt i Quicken.ini, öppnar Downloads-mappen så du kan importera CSV-filen i Quicken, och ändrar sedan tillbaka till komma när du trycker Enter. Behöver bara förberedas en gång:</p>
+      <p><strong>Ladda ner importscript (.ps1)</strong> — Laddar ner ett PowerShell-script (importera_quicken.ps1) som automatiskt ändrar sDecimal till punkt i Quicken.ini, öppnar Downloads-mappen så du kan importera CSV-filen i Quicken, och ändrar sedan tillbaka till komma när du trycker Enter. Behöver bara förberedas en gång:</p>
       <p style="padding-left:1rem;">1. Ladda ner scriptet och kör i PowerShell: <code style="font-family:monospace;">Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</code></p>
       <p style="padding-left:1rem;">2. Avblockera filen: <code style="font-family:monospace;">Unblock-File -Path "C:\Users\[ditt namn]\Downloads\importera_quicken.ps1"</code></p>
       <p style="padding-left:1rem;">3. Därefter räcker det att högerklicka på scriptet → <strong>Kör med PowerShell</strong> varje gång du vill importera.</p>
       <p style="padding-left:1rem;">4. Importera CSV-filen i Quicken medan PowerShell-fönstret är öppet.</p>
       <p style="padding-left:1rem;">5. Tryck <strong>Enter</strong> i PowerShell-fönstret när importen är klar — sDecimal ändras tillbaka till komma automatiskt.</p>
+      <p><strong>Ladda ner importscript (.bat)</strong> — Alternativ till .ps1-scriptet om antivirusprogram (t.ex. Bitdefender) blockerar körning av PowerShell-script. BAT-filen kör .ps1-scriptet med <code style="font-family:monospace;">-ExecutionPolicy Bypass</code> vilket kringgår blockeringar. <strong>Kräver att .ps1-filen också finns i Downloads-mappen.</strong> Dubbelklicka bara på BAT-filen för att köra — inget förberedelsesteg behövs.</p>
     </div>
 
     <div class="card help">
@@ -1065,6 +1067,35 @@ function downloadImportScript() {
   var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([script], {type: 'text/plain;charset=utf-8'}));
   a.download = 'importera_quicken.ps1';
+  a.click();
+}
+
+function downloadBatScript() {
+  var lines = [
+    '@echo off',
+    'chcp 65001 >nul',
+    'echo ================================================',
+    'echo  Quicken CSV Import Helper',
+    'echo ================================================',
+    'echo.',
+    '',
+    ':: Kör PowerShell-scriptet med Bypass för att undvika blockeringar',
+    'powershell.exe -ExecutionPolicy Bypass -NoProfile -File "%USERPROFILE%\\Downloads\\importera_quicken.ps1"',
+    '',
+    ':: Om PowerShell-scriptet inte finns, kör logiken direkt',
+    'if %ERRORLEVEL% NEQ 0 (',
+    '    echo.',
+    '    echo FEL: Kunde inte köra importera_quicken.ps1',
+    '    echo Kontrollera att filen finns i Downloads-mappen.',
+    '    echo Ladda ner den från appen (Ladda ner importscript .ps1)',
+    '    echo.',
+    '    pause',
+    ')',
+  ];
+  var script = lines.join('\r\n') + '\r\n';
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([script], {type: 'application/octet-stream'}));
+  a.download = 'kör_quicken_import.bat';
   a.click();
 }
 
