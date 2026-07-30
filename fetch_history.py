@@ -101,6 +101,10 @@ def fetch_yahoo_history(symbol, start_date, end_date):
         if not result:
             log(f"  ✗ {symbol}: inga data från Yahoo")
             return {}
+        meta = result.get("meta", {})
+        is_pence = meta.get("currency") == "GBp"
+        if is_pence:
+            log(f"  (pence→pound: {symbol} delas med 100)")
         timestamps = result.get("timestamp", [])
         closes = result.get("indicators", {}).get("quote", [{}])[0].get("close", [])
         prices = {}
@@ -108,7 +112,8 @@ def fetch_yahoo_history(symbol, start_date, end_date):
             if price is None:
                 continue
             d = date.fromtimestamp(ts + 43200)  # +12h för att undvika UTC-datumskift
-            prices[d] = round(float(price), 4)
+            p = float(price) / 100.0 if is_pence else float(price)
+            prices[d] = round(p, 4)
         log(f"  ✓ {symbol}: {len(prices)} dagar hämtade från Yahoo Finance")
         return prices
     except Exception as e:
@@ -330,9 +335,10 @@ def main():
 
         # Hämta FX-kurser om nödvändigt
         if currency != "SEK":
-            if currency not in fx_cache:
-                log(f"  Hämtar {currency}/SEK valutahistorik...")
-                fx_cache[currency] = fetch_fx_for_dates(currency, filtered_dates)
+            fx_currency = "GBP" if currency == "GBp" else currency
+            if fx_currency not in fx_cache:
+                log(f"  Hämtar {fx_currency}/SEK valutahistorik...")
+                fx_cache[fx_currency] = fetch_fx_for_dates(fx_currency, filtered_dates)
                 time.sleep(0.3)
 
         for d in filtered_dates:
@@ -340,7 +346,9 @@ def main():
             if raw_price is None:
                 continue
             if currency != "SEK":
-                fx = nearest_fx(fx_cache.get(currency, {}), d)
+                # GBp (pence) är redan dividerat med 100 → använd GBP för FX
+                fx_currency = "GBP" if currency == "GBp" else currency
+                fx = nearest_fx(fx_cache.get(fx_currency, {}), d)
                 sek_price = round(raw_price * fx, 2)
             else:
                 sek_price = raw_price
