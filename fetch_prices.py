@@ -88,7 +88,14 @@ def fetch_yahoo(symbol):
             return None
         meta = result.get("meta", {})
         price = meta.get("regularMarketPrice") or meta.get("previousClose")
-        return float(price) if price else None
+        if not price:
+            return None
+        price = float(price)
+        # GBp = pence (1/100 GBP) — dela med 100 för att få GBP
+        if meta.get("currency") == "GBp":
+            price = price / 100.0
+            log(f"  (pence→pound: {symbol} delat med 100)")
+        return price
     except Exception as e:
         log(f"  Yahoo misslyckades för {symbol}: {e}")
         return None
@@ -179,7 +186,9 @@ def main():
             if raw_price is None:
                 continue
             currency = sec.get("currency", "SEK")
-            fx_rate = fx.get(currency, 1.0) if currency != "SEK" else 1.0
+            # GBp (pence) behandlas som GBP efter division med 100 i fetch_yahoo
+            fx_currency = "GBP" if currency == "GBp" else currency
+            fx_rate = fx.get(fx_currency, 1.0) if fx_currency != "SEK" else 1.0
             sek_price = raw_price * fx_rate
 
             entry = {
