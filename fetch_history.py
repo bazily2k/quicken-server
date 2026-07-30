@@ -319,18 +319,25 @@ def main():
     all_results = []
     fx_cache = {}  # currency -> {date: fx_rate}
 
-    # Steg 1: Twelve Data för alla symboler
+    # Steg 1: Twelve Data för alla symboler utom London (.L)
+    # London-symboler hämtas alltid via Yahoo Finance eftersom Twelve Data
+    # returnerar pence utan att ange valuta (Yahoo flaggar korrekt GBp→GBP)
     td_data = {}  # ext -> {date: price}
+    london_exts = set()
     if api_key:
         log(f"Hämtar historik från Twelve Data för {len(selected)} symboler...")
         for sec in selected:
             ext = sec.get("ext") or sec["sym"]
+            if ext.endswith(".L"):
+                london_exts.add(ext)
+                log(f"  (hoppar över {ext} i Twelve Data — hämtas via Yahoo Finance för korrekt pence-hantering)")
+                continue
             result = fetch_twelvedata_history(ext, start_date, end_date, api_key)
             if result:
                 td_data[ext] = result
             time.sleep(0.5)  # Twelve Data rate-limit
 
-    # Steg 2: Yahoo Finance för de som misslyckades
+    # Steg 2: Yahoo Finance för de som misslyckades + London-symboler
     failed = [s for s in selected if (s.get("ext") or s["sym"]) not in td_data]
     if failed:
         log(f"Provar Yahoo Finance för {len(failed)} symboler...")
@@ -370,10 +377,22 @@ def main():
             if raw_price is None:
                 continue
             if currency != "SEK":
-                # GBp (pence) är redan dividerat med 100 → använd GBP för FX
-                fx_currency = "GBP" if currency == "GBp" else currency
+                fx_currency = "GBP" if currency in ("GBp", "GBP") else currency
                 fx = nearest_fx(fx_cache.get(fx_currency, {}), d)
-                sek_price = round(raw_price * fx, 2)
+                # Pence-korrigering: Yahoo flaggar GBp och fetch_yahoo_history
+                # dividerar redan med 100. Men om kursen fortfarande ser ut som
+                # pence (>200 för GBP-aktier) dividera med 100 som säkerhet.
+                price_for_fx = raw_price
+                if currency == "GBP" and raw_price > 100 and fx > 5:
+                    # Sanity check: om råpris × FX ger orimligt högt SEK-värde
+                    # jämfört med pris/100 × FX, använd pence-versionen
+                    sek_if_pence = round((raw_price / 100.0) * fx, 2)
+                    sek_if_pound = round(raw_price * fx, 2)
+                    # Typiska brittiska aktier: rimligt SEK-pris är under 50 000
+                    if sek_if_pound > 5000 and sek_if_pence < sek_if_pound / 50:
+                        price_for_fx = raw_price / 100.0
+                        log(f"  (pence-korrigering för {sym} {d}: {raw_price}p → {price_for_fx:.2f} GBP)")
+                sek_price = round(price_for_fx * fx, 2)
             else:
                 sek_price = raw_price
 
