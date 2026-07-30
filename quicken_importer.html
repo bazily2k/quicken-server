@@ -1220,19 +1220,38 @@ setTimeout(function() {
 
 // ── HISTORISK IMPORT ──────────────────────────────────────────────────────────
 
+function histLoadSavedSelection() {
+  try { return JSON.parse(localStorage.getItem('hist_selected') || 'null'); } catch(e) { return null; }
+}
+
+function histSaveSelection() {
+  var checked = [];
+  document.querySelectorAll('#hist-sec-list input[type=checkbox]').forEach(function(c) {
+    if (c.checked) checked.push(c.value);
+  });
+  localStorage.setItem('hist_selected', JSON.stringify(checked));
+}
+
 function histRenderSecurities() {
   var list = document.getElementById('hist-sec-list');
   if (!list) return;
   list.innerHTML = '';
+  var saved = histLoadSavedSelection();
   securities.forEach(function(s) {
     if (s.manual) return;
     var id = 'hist-chk-' + s.sym.replace(/[^a-zA-Z0-9]/g,'_');
+    // Om sparad selektion finns — använd den, annars markera alla
+    var isChecked = saved ? saved.indexOf(s.sym) !== -1 : true;
+    var cur = s.currency || 'SEK';
+    var curColor = cur === 'SEK' ? 'var(--text2)' : '#c084fc';
     var label = document.createElement('label');
     label.style.cssText = 'display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;';
     label.innerHTML =
-      '<input type="checkbox" id="' + id + '" value="' + esc(s.sym) + '" checked style="cursor:pointer;"/>' +
-      '<span style="color:var(--text2);font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(s.name) + '">' +
-        '<strong style="color:var(--text);">' + esc(s.sym) + '</strong> ' + esc(s.name) +
+      '<input type="checkbox" id="' + id + '" value="' + esc(s.sym) + '"' + (isChecked ? ' checked' : '') + ' style="cursor:pointer;" onchange="histSaveSelection()"/>' +
+      '<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(s.sym) + ' — ' + esc(s.name) + ' (' + esc(cur) + ')">' +
+        '<strong style="color:var(--text);font-size:12px;">' + esc(s.sym) + '</strong>' +
+        '<span style="color:' + curColor + ';font-size:10px;margin-left:4px;font-weight:600;">' + esc(cur) + '</span>' +
+        '<span style="color:var(--text2);font-size:10px;margin-left:4px;">' + esc(s.name) + '</span>' +
       '</span>';
     list.appendChild(label);
   });
@@ -1240,10 +1259,12 @@ function histRenderSecurities() {
 
 function histSelectAll() {
   document.querySelectorAll('#hist-sec-list input[type=checkbox]').forEach(function(c){ c.checked=true; });
+  histSaveSelection();
 }
 
 function histSelectNone() {
   document.querySelectorAll('#hist-sec-list input[type=checkbox]').forEach(function(c){ c.checked=false; });
+  histSaveSelection();
 }
 
 function histModeChange() {
