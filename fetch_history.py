@@ -253,7 +253,7 @@ def build_csv(results):
     lines = []
     for r in results:
         d = r["date"]
-        date_str = f"{d.month:02d}/{d.day:02d}/{d.year}"
+        date_str = f"{d.year}-{d.month:02d}-{d.day:02d}"
         lines.append(f'{r["sym"]},{r["sek_price"]:.2f},{date_str}')
     return "\n".join(lines) + "\n"
 
