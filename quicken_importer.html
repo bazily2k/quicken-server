@@ -194,7 +194,7 @@ input:focus,select:focus{border-color:var(--border2);}
     </div>
     <div class="card">
       <div class="ctitle">Quicken CSV-förhandsvisning</div>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:.9rem;">Format: <code style="font-family:monospace;font-size:12px;">symbol,pris_sek,mm/dd/yyyy</code> — ingen rubrikrad, tom sista rad.</p>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:.9rem;">Format: <code style="font-family:monospace;font-size:12px;">symbol,pris_sek,yyyy-mm-dd</code> — ingen rubrikrad, tom sista rad.</p>
       <div class="pre" id="csv-pre">Ingen data ännu.</div>
       <div class="arow">
         <button class="btn" onclick="refreshPreview()">Uppdatera förhandsvisning</button>
@@ -338,7 +338,7 @@ input:focus,select:focus{border-color:var(--border2);}
       <p><strong>Sätt datum för alla rader</strong> — Sätter samma datum på alla securities på en gång. Praktiskt om du vill ändra datum efter en kurshämtning.</p>
       <p><strong>Uppdatera förhandsvisning</strong> — Visar hur CSV-filen kommer se ut. Om en rad saknar pris eller datum visas en förklaring varför den inte kan exporteras.</p>
       <p><strong>Exportera lista (Excel)</strong> — Skapar en CSV-fil med alla dina securities och deras kurser, formaterad för Excel med semikolon som avgränsare.</p>
-      <p><strong>Ladda ner CSV-fil</strong> — Skapar Quicken-importfilen i formatet symbol,pris,mm/dd/yyyy utan rubrikrad och med en tom sista rad, precis som Quicken kräver.</p>
+      <p><strong>Ladda ner CSV-fil</strong> — Skapar Quicken-importfilen i formatet symbol,pris,yyyy-mm-dd utan rubrikrad och med en tom sista rad, precis som Quicken kräver.</p>
       <p><strong>Ladda ner importscript (.ps1)</strong> — Laddar ner ett PowerShell-script (importera_quicken.ps1) som automatiskt ändrar sDecimal till punkt i Quicken.ini, öppnar Downloads-mappen så du kan importera CSV-filen i Quicken, och ändrar sedan tillbaka till komma när du trycker Enter. Behöver bara förberedas en gång:</p>
       <p style="padding-left:1rem;">1. Ladda ner scriptet och kör i PowerShell: <code style="font-family:monospace;">Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</code></p>
       <p style="padding-left:1rem;">2. Avblockera filen: <code style="font-family:monospace;">Unblock-File -Path "C:\Users\[ditt namn]\Downloads\importera_quicken.ps1"</code></p>
@@ -964,7 +964,7 @@ function formatDate(d) {
   if (!d) return '';
   var p = d.split('-');
   if (p.length < 3) return '';
-  return p[1]+'/'+p[2]+'/'+p[0];
+  return p[0]+'-'+p[1]+'-'+p[2];
 }
 
 function buildCSV() {
