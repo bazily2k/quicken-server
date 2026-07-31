@@ -1102,9 +1102,8 @@ function downloadBatScript() {
 function downloadCSV() {
   var csv = buildCSV();
   if (!csv.trim()) { alert('Ingen giltig data att exportera.'); return; }
-  var BOM = '\uFEFF';
   var a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([BOM+csv],{type:'text/csv;charset=utf-8;'}));
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/plain;charset=utf-8'}));
   a.download = 'quicken_import_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
 }
@@ -1354,8 +1353,7 @@ function fetchHistory() {
     }
     status.textContent = 'Klart! ' + data.count + ' kursposter för ' + data.securities + ' securities. Laddar ner CSV...';
     // Ladda ner CSV-filen (samma format som vanlig export → fungerar med importera_quicken.ps1)
-    var BOM  = '\uFEFF';
-    var blob = new Blob([BOM + data.csv], {type: 'text/csv;charset=utf-8'});
+    var blob = new Blob([data.csv], {type: 'text/plain;charset=utf-8'});
     var url  = URL.createObjectURL(blob);
     var a    = document.createElement('a');
     a.href   = url;
